@@ -46,7 +46,7 @@ def grade(jsons_LLM, jsons_Label):
     try:
         premise_1_LLM, premise_2_LLM, results_LLM = parsing_json(json.loads(json_repair.repair_json(jsons_LLM)))
     except ValueError as e:
-        print("JSON5 parsing failed!")
+        print("JSON parsing/repairing failed!")
         # print("Error:", e)
         premise_1_LLM, premise_2_LLM, results_LLM = None, None, []
 
