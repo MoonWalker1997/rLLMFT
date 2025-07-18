@@ -43,59 +43,63 @@ def parsing_json(json_output):
 
 
 def grade(jsons_LLM, jsons_Label):
-
-    # print(jsons_LLM)
-    # print(jsons_Label)
     
     try:
-        premise_1_LLM, premise_2_LLM, results_LLM = parsing_json(json.loads(json_repair.repair_json(jsons_LLM)))
-    except ValueError as e:
-        print("JSON parsing/repairing failed!")
-        # print("Error:", e)
-        premise_1_LLM, premise_2_LLM, results_LLM = None, None, []
 
-    premise_1_label, premise_2_label, results_label = parsing_json(json.loads(jsons_Label))
-
-    A, B = 0, 0
-
-    for premises in [[premise_1_label, premise_1_LLM], [premise_2_label, premise_2_LLM]]:
-        for each_key in ["s", "o", "cp", "eb"]:
-            if premises[1] is not None:
-                if each_key in premises[1] and premises[0][each_key] == premises[1][each_key]:
-                    A += 5
-                    B += 5
-            else:
-                B += 5
-        for each_key in ["f", "c"]:
-            if premises[1] is not None:
-                if each_key in premises[1]:
-                    A += (1 - min(1, abs(premises[0][each_key] - premises[1][each_key]))) * 5
-            B += 5
-
-    for each_result_label in results_label:
-        As, Bs = 0, 0
-        for each_result_LLM in results_LLM:
-            tmp_As, tmp_Bs = 0, 0
+        # print(jsons_LLM)
+        # print(jsons_Label)
+        
+        try:
+            premise_1_LLM, premise_2_LLM, results_LLM = parsing_json(json.loads(json_repair.repair_json(jsons_LLM)))
+        except ValueError as e:
+            print("JSON parsing/repairing failed!")
+            # print("Error:", e)
+            premise_1_LLM, premise_2_LLM, results_LLM = None, None, []
+    
+        premise_1_label, premise_2_label, results_label = parsing_json(json.loads(jsons_Label))
+    
+        A, B = 0, 0
+    
+        for premises in [[premise_1_label, premise_1_LLM], [premise_2_label, premise_2_LLM]]:
             for each_key in ["s", "o", "cp", "eb"]:
-                if each_result_LLM is not None:
-                    if each_key in each_result_LLM and each_result_label[each_key] == each_result_LLM[each_key]:
-                        tmp_As += 5
-                        tmp_Bs += 5
+                if premises[1] is not None:
+                    if each_key in premises[1] and premises[0][each_key] == premises[1][each_key]:
+                        A += 5
+                        B += 5
                 else:
-                    tmp_Bs += 5
+                    B += 5
             for each_key in ["f", "c"]:
-                if each_result_LLM is not None:
-                    if each_key in each_result_LLM:
-                        tmp_As += (1 - min(1, abs(each_result_label[each_key] - each_result_LLM[each_key]))) * 5
-                tmp_Bs += 5
-            if tmp_As > As:
-                As = tmp_As
-            if tmp_Bs > Bs:
-                Bs = tmp_Bs
-        A += As
-        B += Bs
-
-    return A / (B + 1e-5)
+                if premises[1] is not None:
+                    if each_key in premises[1]:
+                        A += (1 - min(1, abs(premises[0][each_key] - premises[1][each_key]))) * 5
+                B += 5
+    
+        for each_result_label in results_label:
+            As, Bs = 0, 0
+            for each_result_LLM in results_LLM:
+                tmp_As, tmp_Bs = 0, 0
+                for each_key in ["s", "o", "cp", "eb"]:
+                    if each_result_LLM is not None:
+                        if each_key in each_result_LLM and each_result_label[each_key] == each_result_LLM[each_key]:
+                            tmp_As += 5
+                            tmp_Bs += 5
+                    else:
+                        tmp_Bs += 5
+                for each_key in ["f", "c"]:
+                    if each_result_LLM is not None:
+                        if each_key in each_result_LLM:
+                            tmp_As += (1 - min(1, abs(each_result_label[each_key] - each_result_LLM[each_key]))) * 5
+                    tmp_Bs += 5
+                if tmp_As > As:
+                    As = tmp_As
+                if tmp_Bs > Bs:
+                    Bs = tmp_Bs
+            A += As
+            B += Bs
+    
+        return A / (B + 1e-5)
+    except:
+        return 0
 
 
 if __name__ == "__main__":
