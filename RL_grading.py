@@ -56,13 +56,16 @@ def grade(jsons_LLM, jsons_Label):
 
     for premises in [[premise_1_label, premise_1_LLM], [premise_2_label, premise_2_LLM]]:
         for each_key in ["s", "o", "cp", "eb"]:
-            if premises[0][each_key] == premises[1][each_key]:
-                A += 5
-                B += 5
+            if premises[1] is not None:
+                if each_key in premises[1] and premises[0][each_key] == premises[1][each_key]:
+                    A += 5
+                    B += 5
             else:
                 B += 5
         for each_key in ["f", "c"]:
-            A += (1 - min(1, abs(premises[0][each_key] - premises[1][each_key]))) * 5
+            if premises[1] is not None:
+                if each_key in premises[1]:
+                    A += (1 - min(1, abs(premises[0][each_key] - premises[1][each_key]))) * 5
             B += 5
 
     for each_result_label in results_label:
@@ -70,13 +73,16 @@ def grade(jsons_LLM, jsons_Label):
         for each_result_LLM in results_LLM:
             tmp_As, tmp_Bs = 0, 0
             for each_key in ["s", "o", "cp", "eb"]:
-                if each_result_label[each_key] == each_result_LLM[each_key]:
-                    tmp_As += 5
-                    tmp_Bs += 5
+                if each_result_LLM is not None:
+                    if each_key in each_result_LLM and each_result_label[each_key] == each_result_LLM[each_key]:
+                        tmp_As += 5
+                        tmp_Bs += 5
                 else:
                     tmp_Bs += 5
             for each_key in ["f", "c"]:
-                tmp_As += (1 - min(1, abs(each_result_label[each_key] - each_result_LLM[each_key]))) * 5
+                if each_result_LLM is not None:
+                    if each_key in each_result_LLM:
+                        tmp_As += (1 - min(1, abs(each_result_label[each_key] - each_result_LLM[each_key]))) * 5
                 tmp_Bs += 5
             if tmp_As > As:
                 As = tmp_As
@@ -89,11 +95,12 @@ def grade(jsons_LLM, jsons_Label):
 
 
 if __name__ == "__main__":
-    with (open("data_meta.csv", newline="", encoding="utf-8") as file):
+    with (open("data/data_meta.csv", newline="", encoding="utf-8") as file):
         reader = csv.reader(file, quoting=csv.QUOTE_NONE, escapechar='\\')
         next(reader, None)
         for each in reader:
-            from_LLM = each[2]
-            label = each[2]
+            from_LLM = "1. Identify the different types of information (statements, judgments, facts) provided by the user."
+            # label = each[2]
+            label = '{"premise_1": {"s": "ID_93045", "o": "ID_6664", "cp": "-->", "f": 0.045, "c": 0.9, "eb": [1270, 6980]}, "premise_2": {"s": "ID_56961", "o": "ID_6664", "cp": "<->", "f": 0.921, "c": 0.9, "eb": [1029, 2539]}, "results": [{"s": "ID_93045", "o": "ID_56961", "cp": "-->", "f": 0.042, "c": 0.746, "eb": [1029, 1270, 2539, 6980]}]}'
             print(grade(from_LLM, label))
             break
