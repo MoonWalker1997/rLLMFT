@@ -37,10 +37,11 @@ if __name__ == "__main__":
     chunking_data = []
     max_length = 0
     for intro, premise, answer in meta_data:
-        chunk1 = intro + premise
-        chunk2 = premise + answer
-        max_length = max(max_length, len(chunk1), len(chunk2))
-        chunking_data.extend([chunk1, chunk2])
+        # chunk1 = intro + premise
+        # chunk2 = premise + answer
+        # max_length = max(max_length, len(chunk1), len(chunk2))
+        # chunking_data.extend([chunk1, chunk2])
+        chunking_data.append(intro + premise + answer)
 
     with open("data/data_chunk.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f, quoting=csv.QUOTE_NONE, escapechar="\\")
