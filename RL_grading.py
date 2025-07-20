@@ -45,19 +45,17 @@ def parsing_json(json_output):
 def grade(jsons_LLM, jsons_Label):
     
     try:
-
-        # print(jsons_LLM)
-        # print(jsons_Label)
-        
         try:
             premise_1_LLM, premise_2_LLM, results_LLM = parsing_json(json.loads(json_repair.repair_json(jsons_LLM)))
         except ValueError as e:
             print("JSON parsing/repairing failed!")
             # print("Error:", e)
             premise_1_LLM, premise_2_LLM, results_LLM = None, None, []
-    
+
+        # the label json is always valid
         premise_1_label, premise_2_label, results_label = parsing_json(json.loads(jsons_Label))
-    
+
+        # grades
         A, B = 0, 0
     
         for premises in [[premise_1_label, premise_1_LLM], [premise_2_label, premise_2_LLM]]:
@@ -71,7 +69,8 @@ def grade(jsons_LLM, jsons_Label):
             for each_key in ["f", "c"]:
                 if premises[1] is not None:
                     if each_key in premises[1]:
-                        A += (1 - min(1, abs(premises[0][each_key] - premises[1][each_key]))) * 5
+                        if abs(premises[0][each_key] - premises[1][each_key]) <= 0.2:
+                            A += 5
                 B += 5
     
         for each_result_label in results_label:
