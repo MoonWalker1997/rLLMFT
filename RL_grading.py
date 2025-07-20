@@ -2,6 +2,8 @@ import csv
 import json
 import json_repair
 
+from formal_reasoning import Truth, TFS
+
 
 def parsing_json(json_output):
     if "premise_1" in json_output:
@@ -32,7 +34,8 @@ def parsing_json(json_output):
                                     or "cp" not in each
                                     or "f" not in each
                                     or "c" not in each
-                                    or "eb" not in each):
+                                    or "eb" not in each
+                                    or "r" not in each):
                                 return None, None, []
                             results.append(each)
                         return premise_1, premise_2, results
@@ -57,7 +60,8 @@ def grade(jsons_LLM, jsons_Label):
 
         # grades
         A, B = 0, 0
-    
+
+        # premise grading
         for premises in [[premise_1_label, premise_1_LLM], [premise_2_label, premise_2_LLM]]:
             for each_key in ["s", "o", "cp", "eb"]:
                 if premises[1] is not None:
@@ -72,23 +76,29 @@ def grade(jsons_LLM, jsons_Label):
                         if abs(premises[0][each_key] - premises[1][each_key]) <= 0.2:
                             A += 5
                 B += 5
-    
+
+        # results grading
         for each_result_label in results_label:
             As, Bs = 0, 0
             for each_result_LLM in results_LLM:
                 tmp_As, tmp_Bs = 0, 0
-                for each_key in ["s", "o", "cp", "eb"]:
+                # grade on the consistency
+                for each_key in ["s", "o", "cp", "eb", "r"]:
                     if each_result_LLM is not None:
                         if each_key in each_result_LLM and each_result_label[each_key] == each_result_LLM[each_key]:
                             tmp_As += 5
                             tmp_Bs += 5
                     else:
                         tmp_Bs += 5
-                for each_key in ["f", "c"]:
-                    if each_result_LLM is not None:
-                        if each_key in each_result_LLM:
-                            tmp_As += (1 - min(1, abs(each_result_label[each_key] - each_result_LLM[each_key]))) * 5
-                    tmp_Bs += 5
+
+                # grade on the rule usage
+                truth_1 = Truth(premise_1_LLM["f"], premise_1_LLM["c"])
+                truth_2 = Truth(premise_2_LLM["f"], premise_2_LLM["c"])
+                otb_truth = TFS.tf[each_result_LLM["r"]](truth_1, truth_2)
+                tmp_As += (1 - min(1, abs(each_result_LLM["f"] - otb_truth.f))) * 5
+                tmp_As += (1 - min(1, abs(each_result_LLM["c"] - otb_truth.c))) * 5
+                tmp_Bs += 10
+
                 if tmp_As > As:
                     As = tmp_As
                 if tmp_Bs > Bs:
@@ -106,8 +116,8 @@ if __name__ == "__main__":
         reader = csv.reader(file, quoting=csv.QUOTE_NONE, escapechar='\\')
         next(reader, None)
         for each in reader:
-            from_LLM = "1. Identify the different types of information (statements, judgments, facts) provided by the user."
+            from_LLM = '{"premise_1": {"s": "ID_93045", "o": "ID_6664", "cp": "-->", "f": 0.045, "c": 0.9, "eb": [1270, 6980]}, "premise_2": {"s": "ID_56961", "o": "ID_6664", "cp": "<->", "f": 0.921, "c": 0.9, "eb": [1029, 2539]}, "results": [{"s": "ID_93045", "o": "ID_56961", "cp": "-->", "f": 0.042, "c": 0.746, "eb": [1029, 1270, 2539, 6980], "r": "ded"}]}'
             # label = each[2]
-            label = '{"premise_1": {"s": "ID_93045", "o": "ID_6664", "cp": "-->", "f": 0.045, "c": 0.9, "eb": [1270, 6980]}, "premise_2": {"s": "ID_56961", "o": "ID_6664", "cp": "<->", "f": 0.921, "c": 0.9, "eb": [1029, 2539]}, "results": [{"s": "ID_93045", "o": "ID_56961", "cp": "-->", "f": 0.042, "c": 0.746, "eb": [1029, 1270, 2539, 6980]}]}'
+            label = '{"premise_1": {"s": "ID_93045", "o": "ID_6664", "cp": "-->", "f": 0.045, "c": 0.9, "eb": [1270, 6980]}, "premise_2": {"s": "ID_56961", "o": "ID_6664", "cp": "<->", "f": 0.921, "c": 0.9, "eb": [1029, 2539]}, "results": [{"s": "ID_93045", "o": "ID_56961", "cp": "-->", "f": 0.042, "c": 0.746, "eb": [1029, 1270, 2539, 6980], "r": "ded"}]}'
             print(grade(from_LLM, label))
             break

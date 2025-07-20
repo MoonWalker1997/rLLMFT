@@ -5,7 +5,7 @@ import numpy as np
 
 class Task:
 
-    def __init__(self, sub, obj, copula, truth, eb):
+    def __init__(self, sub, obj, copula, truth, eb, rl=None):
         # statement
         self.sub = sub
         self.obj = obj
@@ -19,16 +19,28 @@ class Task:
         # evidential_base
         self.eb = eb
 
+        # rules used to derive this task
+        self.r = rl
+
     def string(self):
         return f"<{self.sub}{self.copula}{self.obj}>. %{round(self.f, 3)}; {round(self.c, 3)}% {self.eb}"
 
     def to_json(self):
-        return {"s": self.sub,
-                "o": self.obj,
-                "cp": self.copula,
-                "f": round(self.f, 3),
-                "c": round(self.c, 3),
-                "eb": sorted(list(self.eb))}
+        if self.r is None:
+            return {"s": self.sub,
+                    "o": self.obj,
+                    "cp": self.copula,
+                    "f": round(self.f, 3),
+                    "c": round(self.c, 3),
+                    "eb": sorted(list(self.eb))}
+        else:
+            return {"s": self.sub,
+                    "o": self.obj,
+                    "cp": self.copula,
+                    "f": round(self.f, 3),
+                    "c": round(self.c, 3),
+                    "eb": sorted(list(self.eb)),
+                    "r": self.r}
 
 
 class Truth:
@@ -51,6 +63,23 @@ class Truth:
 
 
 class TruthFunctions:
+
+    def __init__(self):
+        self.tf = {"ded": self.ded,
+                   "ded_p": self.ded_p,
+                   "ana": self.ana,
+                   "ana_p": self.ana_p,
+                   "res": self.res,
+                   "res_p": self.res_p,
+                   "abd": self.abd,
+                   "abd_p": self.abd_p,
+                   "ind": self.ind,
+                   "ind_p": self.ind_p,
+                   "exe": self.exe,
+                   "exe_p": self.exe_p,
+                   "com": self.com,
+                   "com_p": self.com_p
+                   }
 
     @staticmethod
     def AND(*values):
@@ -119,57 +148,57 @@ def reasoning(task_1: Task, task_2: Task):
 
     if task_1.sub == task_2.obj and task_1.copula == task_2.copula == "-->":
         # MP, SM -> SP(ded), PS('exe)
-        t = Task(task_2.sub, task_1.obj, "-->", TFS.ded(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_2.sub, task_1.obj, "-->", TFS.ded(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "ded")
         ret.append(t)
-        t = Task(task_2.obj, task_1.sub, "-->", TFS.exe_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_2.obj, task_1.sub, "-->", TFS.exe_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "exp_p")
         ret.append(t)
     elif task_1.obj == task_2.obj and task_1.copula == task_2.copula == "-->":
         # PM, SM -> SP(abd), PS('abd), S<>P('com)
-        t = Task(task_2.sub, task_1.sub, "-->", TFS.abd(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_2.sub, task_1.sub, "-->", TFS.abd(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "abd")
         ret.append(t)
-        t = Task(task_1.sub, task_2.sub, "-->", TFS.abd_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_1.sub, task_2.sub, "-->", TFS.abd_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "adb_p")
         ret.append(t)
-        t = Task(task_2.sub, task_1.sub, "<->", TFS.com_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_2.sub, task_1.sub, "<->", TFS.com_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "com_p")
         ret.append(t)
-        t = Task(task_1.sub, task_2.sub, "<->", TFS.com_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_1.sub, task_2.sub, "<->", TFS.com_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "com_p")
         ret.append(t)
     elif task_1.sub == task_2.obj and task_1.copula == "<->" and task_2.copula == "-->":
         # M<>P, SM -> SP('ana)
-        t = Task(task_2.sub, task_1.obj, "-->", TFS.ana_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_2.sub, task_1.obj, "-->", TFS.ana_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "ana_p")
         ret.append(t)
     elif task_1.sub == task_2.sub and task_1.copula == task_2.copula == "-->":
         # MP, MS -> SP(ind), PS('ind), S<>P(com)
-        t = Task(task_2.obj, task_1.obj, "-->", TFS.ind(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_2.obj, task_1.obj, "-->", TFS.ind(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "ind")
         ret.append(t)
-        t = Task(task_1.obj, task_2.obj, "-->", TFS.ind_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_1.obj, task_2.obj, "-->", TFS.ind_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "ind_p")
         ret.append(t)
-        t = Task(task_2.obj, task_1.obj, "<->", TFS.com(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_2.obj, task_1.obj, "<->", TFS.com(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "com")
         ret.append(t)
-        t = Task(task_1.obj, task_2.obj, "<->", TFS.com(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_1.obj, task_2.obj, "<->", TFS.com(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "com")
         ret.append(t)
     elif task_1.obj == task_2.sub and task_1.copula == task_2.copula == "-->":
         # PM, MS -> SP(exe), PS('ded)
-        t = Task(task_2.obj, task_1.sub, "-->", TFS.exe(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_2.obj, task_1.sub, "-->", TFS.exe(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "exe")
         ret.append(t)
-        t = Task(task_1.sub, task_2.obj, "-->", TFS.ded_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_1.sub, task_2.obj, "-->", TFS.ded_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "ded_p")
         ret.append(t)
     elif task_1.sub == task_2.sub and task_1.copula == "<->" and task_2.copula == "-->":
         # M<>P, MS -> PS('ana)
-        t = Task(task_1.obj, task_2.obj, "-->", TFS.ana_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_1.obj, task_2.obj, "-->", TFS.ana_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "ana_p")
         ret.append(t)
     elif task_1.sub == task_2.obj and task_1.copula == "-->" and task_2.copula == "<->":
         # MP, S<>M -> SP(ana)
-        t = Task(task_2.sub, task_1.obj, "-->", TFS.ana(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_2.sub, task_1.obj, "-->", TFS.ana(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "ana")
         ret.append(t)
     elif task_1.obj == task_2.obj and task_1.copula == "-->" and task_2.copula == "<->":
         # PM, S<>M -> PS(ana)
-        t = Task(task_1.sub, task_2.sub, "-->", TFS.ana(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_1.sub, task_2.sub, "-->", TFS.ana(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "ana")
         ret.append(t)
     elif task_1.sub == task_2.obj and task_1.copula == task_2.copula == "<->":
         # M<>P, S<>M -> S<>P(res)
-        t = Task(task_2.sub, task_1.obj, "<->", TFS.res(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_2.sub, task_1.obj, "<->", TFS.res(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "res")
         ret.append(t)
-        t = Task(task_1.obj, task_2.sub, "<->", TFS.res(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb))
+        t = Task(task_1.obj, task_2.sub, "<->", TFS.res(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "res")
         ret.append(t)
 
     return ret

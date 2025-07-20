@@ -35,7 +35,7 @@ if __name__ == "__main__":
             writer.writerow(row)
 
     chunking_data = []
-    max_length = 0
+    max_length = -1
     for intro, premise, answer in meta_data:
         # chunk1 = intro + premise
         # chunk2 = premise + answer
@@ -49,4 +49,5 @@ if __name__ == "__main__":
         for chunk in chunking_data:
             writer.writerow([chunk])
 
-    print(f"Max length of chunked text: {max_length}")
+    if max_length != -1:
+        print(f"Max length of chunked text: {max_length}")
