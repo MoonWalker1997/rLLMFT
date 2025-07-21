@@ -156,7 +156,7 @@ def reasoning(task_1: Task, task_2: Task):
         # PM, SM -> SP(abd), PS('abd), S<>P('com)
         t = Task(task_2.sub, task_1.sub, "-->", TFS.abd(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "abd")
         ret.append(t)
-        t = Task(task_1.sub, task_2.sub, "-->", TFS.abd_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "adb_p")
+        t = Task(task_1.sub, task_2.sub, "-->", TFS.abd_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "abd_p")
         ret.append(t)
         t = Task(task_2.sub, task_1.sub, "<->", TFS.com_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "com_p")
         ret.append(t)
