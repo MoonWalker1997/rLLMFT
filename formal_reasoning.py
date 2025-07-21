@@ -204,7 +204,7 @@ def reasoning(task_1: Task, task_2: Task):
     return ret
 
 
-truth_categories = [
+_truth_categories = [
     (0.0, 0.2, ["is false", "completely false", "does not hold", "has been refuted", "is incorrect"]),
     (0.2, 0.4, ["is mostly false", "tends to be false", "seems incorrect", "barely holds", "is generally wrong"]),
     (0.4, 0.6,
@@ -213,7 +213,7 @@ truth_categories = [
     (0.8, 1.01, ["is true", "completely holds", "has been confirmed", "is correct", "is a fact"])
 ]
 
-inheritance_templates = [
+_inheritance_templates = [
     "{sub} is a type of {obj}",
     "Every {sub} is an instance of {obj}",
     "{sub} falls under the category of {obj}",
@@ -236,7 +236,7 @@ inheritance_templates = [
     "Part of what makes up {obj} is represented by {sub}"
 ]
 
-similarity_templates = [
+_similarity_templates = [
     "{sub} and {obj} are conceptually identical",
     "{sub} is the same as {obj}",
     "{sub} and {obj} refer to the same thing",
@@ -260,15 +260,15 @@ similarity_templates = [
 ]
 
 
-def get_truth_label(freq):
+def get_truth_label(freq, truth_categories):
     for lower, upper, labels in truth_categories:
         if lower <= freq < upper:
             return random.choice(labels)
 
 
-def render_input(task: Task):
+def render_input(task: Task, inheritance_templates, similarity_templates, truth_categories):
     evidence_str = ", ".join(map(str, task.eb))
-    truth_label = get_truth_label(task.f)
+    truth_label = get_truth_label(task.f, truth_categories)
 
     if task.copula == "-->":
         template = random.choice(inheritance_templates)
@@ -287,7 +287,15 @@ def parse_output(task_1: Task, task_2: Task, results: [Task, ...]):
     return ret
 
 
-def gen_random_reasoning(n=1):
+def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=None, truth_categories=None):
+
+    if truth_categories is None:
+        truth_categories = _truth_categories
+    if similarity_templates is None:
+        similarity_templates = _similarity_templates
+    if inheritance_templates is None:
+        inheritance_templates = _inheritance_templates
+
     ret = []
     cases = ["MP, SM", "PM, SM", "M<>P, SM", "MP, MS", "PM, MS", "M<>P, MS", "MP, S<>M", "PM, S<>M", "M<>P, S<>M"]
     for _ in range(n):
@@ -303,7 +311,9 @@ def gen_random_reasoning(n=1):
                 J2 = Task(S, M, "-->", Truth(random.random(), 0.9),
                           {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
                 Rs = reasoning(J1, J2)
-                ret.append([[render_input(J1), render_input(J2), parse_output(J1, J2, Rs)], [J1, J2, Rs]])
+                ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
+                             render_input(J2, inheritance_templates, similarity_templates, truth_categories),
+                             parse_output(J1, J2, Rs)], [J1, J2, Rs]])
             elif case == 1:
                 # PM, SM
                 J1 = Task(P, M, "-->", Truth(random.random(), 0.9),
@@ -311,7 +321,9 @@ def gen_random_reasoning(n=1):
                 J2 = Task(S, M, "-->", Truth(random.random(), 0.9),
                           {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
                 Rs = reasoning(J1, J2)
-                ret.append([[render_input(J1), render_input(J2), parse_output(J1, J2, Rs)], [J1, J2, Rs]])
+                ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
+                             render_input(J2, inheritance_templates, similarity_templates, truth_categories),
+                             parse_output(J1, J2, Rs)], [J1, J2, Rs]])
             elif case == 2:
                 # M<>P, SM
                 J1 = Task(M, P, "<->", Truth(random.random(), 0.9),
@@ -319,7 +331,8 @@ def gen_random_reasoning(n=1):
                 J2 = Task(S, M, "-->", Truth(random.random(), 0.9),
                           {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
                 Rs = reasoning(J1, J2)
-                ret.append([[render_input(J1), render_input(J2), parse_output(J1, J2, Rs)], [J1, J2, Rs]])
+                ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
+                             render_input(J2, inheritance_templates, similarity_templates, truth_categories), parse_output(J1, J2, Rs)], [J1, J2, Rs]])
             elif case == 3:
                 # MP, MS
                 J1 = Task(M, P, "-->", Truth(random.random(), 0.9),
@@ -327,7 +340,9 @@ def gen_random_reasoning(n=1):
                 J2 = Task(M, S, "-->", Truth(random.random(), 0.9),
                           {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
                 Rs = reasoning(J1, J2)
-                ret.append([[render_input(J1), render_input(J2), parse_output(J1, J2, Rs)], [J1, J2, Rs]])
+                ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
+                             render_input(J2, inheritance_templates, similarity_templates, truth_categories),
+                             parse_output(J1, J2, Rs)], [J1, J2, Rs]])
             elif case == 4:
                 # PM, MS
                 J1 = Task(P, M, "-->", Truth(random.random(), 0.9),
@@ -335,7 +350,9 @@ def gen_random_reasoning(n=1):
                 J2 = Task(M, S, "-->", Truth(random.random(), 0.9),
                           {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
                 Rs = reasoning(J1, J2)
-                ret.append([[render_input(J1), render_input(J2), parse_output(J1, J2, Rs)], [J1, J2, Rs]])
+                ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
+                             render_input(J2, inheritance_templates, similarity_templates, truth_categories),
+                             parse_output(J1, J2, Rs)], [J1, J2, Rs]])
             elif case == 5:
                 # M<>P, MS
                 J1 = Task(M, P, "<->", Truth(random.random(), 0.9),
@@ -343,7 +360,9 @@ def gen_random_reasoning(n=1):
                 J2 = Task(M, S, "-->", Truth(random.random(), 0.9),
                           {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
                 Rs = reasoning(J1, J2)
-                ret.append([[render_input(J1), render_input(J2), parse_output(J1, J2, Rs)], [J1, J2, Rs]])
+                ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
+                             render_input(J2, inheritance_templates, similarity_templates, truth_categories),
+                             parse_output(J1, J2, Rs)], [J1, J2, Rs]])
             elif case == 6:
                 # MP, S<>M
                 J1 = Task(M, P, "-->", Truth(random.random(), 0.9),
@@ -351,7 +370,9 @@ def gen_random_reasoning(n=1):
                 J2 = Task(S, M, "<->", Truth(random.random(), 0.9),
                           {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
                 Rs = reasoning(J1, J2)
-                ret.append([[render_input(J1), render_input(J2), parse_output(J1, J2, Rs)], [J1, J2, Rs]])
+                ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
+                             render_input(J2, inheritance_templates, similarity_templates, truth_categories),
+                             parse_output(J1, J2, Rs)], [J1, J2, Rs]])
             elif case == 7:
                 # PM, S<>M
                 J1 = Task(P, M, "-->", Truth(random.random(), 0.9),
@@ -359,7 +380,9 @@ def gen_random_reasoning(n=1):
                 J2 = Task(S, M, "<->", Truth(random.random(), 0.9),
                           {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
                 Rs = reasoning(J1, J2)
-                ret.append([[render_input(J1), render_input(J2), parse_output(J1, J2, Rs)], [J1, J2, Rs]])
+                ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
+                             render_input(J2, inheritance_templates, similarity_templates, truth_categories),
+                             parse_output(J1, J2, Rs)], [J1, J2, Rs]])
             elif case == 8:
                 # M<>P, S<>M
                 J1 = Task(M, P, "<->", Truth(random.random(), 0.9),
@@ -367,7 +390,9 @@ def gen_random_reasoning(n=1):
                 J2 = Task(S, M, "<->", Truth(random.random(), 0.9),
                           {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
                 Rs = reasoning(J1, J2)
-                ret.append([[render_input(J1), render_input(J2), parse_output(J1, J2, Rs)], [J1, J2, Rs]])
+                ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
+                             render_input(J2, inheritance_templates, similarity_templates, truth_categories),
+                             parse_output(J1, J2, Rs)], [J1, J2, Rs]])
     return ret
 
 

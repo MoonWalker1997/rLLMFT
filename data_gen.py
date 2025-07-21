@@ -3,7 +3,7 @@ import csv
 import json
 import argparse
 
-from formal_reasoning import gen_random_reasoning
+from formal_reasoning import gen_random_reasoning, _inheritance_templates, _similarity_templates, _truth_categories
 
 
 def prompt(task_1_str, task_2_str, results: dict):
@@ -18,12 +18,20 @@ def prompt(task_1_str, task_2_str, results: dict):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--num_data", type=int, default=10, help="Number of data samples to generate")
+    parser.add_argument("--num_template", type=int, default=10, help="Number of templates to use")
+    parser.add_argument("--num_category", type=int, default=5, help="Number of categories to use")
     args = parser.parse_args()
     num_data = args.num_data
+    num_template = args.num_template
+    num_category = args.num_category
 
     os.makedirs("data", exist_ok=True)
 
-    raw_data = gen_random_reasoning(num_data)
+    inheritance_templates = _inheritance_templates[:num_template]
+    similarity_templates = _similarity_templates[:num_template]
+    truth_categories = [[each[0], each[1], each[2][:num_category]] for each in _truth_categories]
+
+    raw_data = gen_random_reasoning(num_data, inheritance_templates, similarity_templates, truth_categories)
     raw_data = [each[0] for each in raw_data]
 
     meta_data = [prompt(*each) for each in raw_data]

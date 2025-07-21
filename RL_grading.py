@@ -1,5 +1,5 @@
-import csv
 import json
+
 import json_repair
 
 from formal_reasoning import Truth, TFS
@@ -46,7 +46,8 @@ def parsing_json(json_output):
 
 
 def grade(jsons_LLM, jsons_Label):
-    
+    summarization = set()
+
     try:
         try:
             premise_1_LLM, premise_2_LLM, results_LLM = parsing_json(json.loads(json_repair.repair_json(jsons_LLM)))
@@ -62,19 +63,35 @@ def grade(jsons_LLM, jsons_Label):
         A, B = 0, 0
 
         # premise grading
-        for premises in [[premise_1_label, premise_1_LLM], [premise_2_label, premise_2_LLM]]:
+        for i, premises in enumerate([[premise_1_label, premise_1_LLM], [premise_2_label, premise_2_LLM]]):
             for each_key in ["s", "o", "cp", "eb"]:
                 if premises[1] is not None:
-                    if each_key in premises[1] and premises[0][each_key] == premises[1][each_key]:
-                        A += 5
-                        B += 5
+                    if each_key in premises[1]:
+                        if premises[0][each_key] == premises[1][each_key]:
+                            A += 5
+                        else:
+                            summarization.add(f"LLM premise {i + 1}'s key {each_key} inconsistent. "
+                                              f"LLM {each_key}: {premises[1][each_key]}, "
+                                              f"label {each_key}: {premises[0][each_key]}")
+                    else:
+                        summarization.add(f"LLM premise {i + 1}'s key {each_key} does not exist")
                 else:
-                    B += 5
+                    summarization.add(f"LLM premise {i + 1} does not exist")
+                B += 5
+
             for each_key in ["f", "c"]:
                 if premises[1] is not None:
                     if each_key in premises[1]:
                         if abs(premises[0][each_key] - premises[1][each_key]) <= 0.2:
                             A += 5
+                        else:
+                            summarization.add(f"LLM premise {i + 1}'s key {each_key} different too much. "
+                                              f"LLM {each_key}: {premises[1][each_key]}, "
+                                              f"label {each_key}: {premises[0][each_key]}")
+                    else:
+                        summarization.add(f"LLM premise {i + 1}'s key {each_key} does not exist")
+                else:
+                    summarization.add(f"LLM premise {i + 1} does not exist")
                 B += 5
 
         # results grading
@@ -85,11 +102,20 @@ def grade(jsons_LLM, jsons_Label):
                 # grade on the consistency
                 for each_key in ["s", "o", "cp", "eb", "r"]:
                     if each_result_LLM is not None:
-                        if each_key in each_result_LLM and each_result_label[each_key] == each_result_LLM[each_key]:
-                            tmp_As += 5
-                            tmp_Bs += 5
+                        if each_key in each_result_LLM:
+                            if each_result_label[each_key] == each_result_LLM[each_key]:
+                                tmp_As += 5
+                            else:
+                                summarization.add(f"LLM result's key {each_key} inconsistent. "
+                                                  f"LLM result: {each_result_LLM}, "
+                                                  f"LLM {each_key}: {each_result_LLM[each_key]}, "
+                                                  f"label {each_key}: {each_result_label[each_key]}")
+                        else:
+                            summarization.add(f"LLM result does not have key {each_key}. "
+                                              f"LLM result: {each_result_LLM}")
                     else:
-                        tmp_Bs += 5
+                        summarization.add(f"LLM does not have any results")
+                    tmp_Bs += 5
 
                 # grade on the rule usage
                 truth_1 = Truth(premise_1_LLM["f"], premise_1_LLM["c"])
@@ -98,6 +124,8 @@ def grade(jsons_LLM, jsons_Label):
                 tmp_As += (1 - min(1, abs(each_result_LLM["f"] - otb_truth.f))) * 5
                 tmp_As += (1 - min(1, abs(each_result_LLM["c"] - otb_truth.c))) * 5
                 tmp_Bs += 10
+                summarization.add(f"Ought-to-be truth-value: [{otb_truth.f}, {otb_truth.c}]. "
+                                  f"LLM truth-value: [{each_result_LLM['f']}, {each_result_LLM['c']}]. ")
 
                 if tmp_As > As:
                     As = tmp_As
@@ -105,19 +133,30 @@ def grade(jsons_LLM, jsons_Label):
                     Bs = tmp_Bs
             A += As
             B += Bs
-    
-        return A / (B + 1e-5)
+
+        return A / (B + 1e-5), summarization
     except:
-        return 0
+        summarization.add("Fatal error, cannot parsing")
+        return 0, summarization
 
 
 if __name__ == "__main__":
-    with (open("data/data_meta.csv", newline="", encoding="utf-8") as file):
-        reader = csv.reader(file, quoting=csv.QUOTE_NONE, escapechar='\\')
-        next(reader, None)
-        for each in reader:
-            from_LLM = '{"premise_1": {"s": "ID_93045", "o": "ID_6664", "cp": "-->", "f": 0.045, "c": 0.9, "eb": [1270, 6980]}, "premise_2": {"s": "ID_56961", "o": "ID_6664", "cp": "<->", "f": 0.921, "c": 0.9, "eb": [1029, 2539]}, "results": [{"s": "ID_93045", "o": "ID_56961", "cp": "-->", "f": 0.042, "c": 0.746, "eb": [1029, 1270, 2539, 6980], "r": "ded"}]}'
-            # label = each[2]
-            label = '{"premise_1": {"s": "ID_93045", "o": "ID_6664", "cp": "-->", "f": 0.045, "c": 0.9, "eb": [1270, 6980]}, "premise_2": {"s": "ID_56961", "o": "ID_6664", "cp": "<->", "f": 0.921, "c": 0.9, "eb": [1029, 2539]}, "results": [{"s": "ID_93045", "o": "ID_56961", "cp": "-->", "f": 0.042, "c": 0.746, "eb": [1029, 1270, 2539, 6980], "r": "ded"}]}'
-            print(grade(from_LLM, label))
-            break
+    # with (open("data/data_meta.csv", newline="", encoding="utf-8") as file):
+    #     reader = csv.reader(file, quoting=csv.QUOTE_NONE, escapechar='\\')
+    #     next(reader, None)
+    #     for each in reader:
+    #         print(each)
+    #         break
+
+    from_LLM = ('{"premise_1": {"s": "ID_55142", "o": "ID_68017", "cp": "-->", "f": 0.474, "c": 0.9, '
+                '"eb": [970, 2032]}, "premise_2": {"s": "ID_68017", "o": "ID_77508", "cp": "-->", "f": 0.193, '
+                '"c": 0.9, "eb": [9512]}, "results": [{"s": "ID_77508", "o": "ID_55142", "cp": "-->", '
+                '"f": 1.0, "c": 0.069, "eb": [970, 2032, 9512], "r": "exe"}, {"s": "ID_55142", '
+                '"o": "ID_77508", "cp": "-->", "f": 0.092, "c": 0.074, "eb": [970, 2032, 9512], '
+                '"r": "ded_p"}]}')
+    label = ('{"premise_1": {"s": "ID_55142", "o": "ID_68017", "cp": "-->", "f": 0.474, "c": 0.9, "eb": [970, '
+             '2032]}, "premise_2": {"s": "ID_68017", "o": "ID_77508", "cp": "-->", "f": 0.193, "c": 0.9, '
+             '"eb": [9512]}, "results": [{"s": "ID_77508", "o": "ID_55142", "cp": "-->", "f": 1.0, '
+             '"c": 0.069, "eb": [970, 2032, 9512], "r": "exe"}, {"s": "ID_55142", "o": "ID_77508", '
+             '"cp": "-->", "f": 0.092, "c": 0.074, "eb": [970, 2032, 9512], "r": "ded_p"}]}')
+    print(grade(from_LLM, label))
