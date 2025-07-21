@@ -46,6 +46,12 @@ def parsing_json(json_output):
 
 
 def grade(jsons_LLM, jsons_Label):
+
+    if "Assistant:" in jsons_LLM:
+        jsons_LLM = jsons_LLM.split("Assistant:")[1]
+    if "Assistant:" in jsons_Label:
+        jsons_Label = jsons_Label.split("Assistant:")[1]
+    
     summarization = set()
 
     try:
