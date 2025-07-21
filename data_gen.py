@@ -16,9 +16,6 @@ def prompt(task_1_str, task_2_str, results: dict):
 
 
 if __name__ == "__main__":
-
-    print("X")
-    
     parser = argparse.ArgumentParser()
     parser.add_argument("--num_data", type=int, default=10, help="Number of data samples to generate")
     parser.add_argument("--num_template", type=int, default=10, help="Number of templates to use")
