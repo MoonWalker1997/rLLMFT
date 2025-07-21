@@ -8,8 +8,8 @@ from formal_reasoning import gen_random_reasoning, _inheritance_templates, _simi
 
 def prompt(task_1_str, task_2_str, results: dict):
     return [
-        "A conversation between User and Assistant. The user asks a question, and the Assistant solves it. "
-        "Derive all valid conclusions. ",
+        "A conversation between User and Assistant. The user asks a question, and the Assistant solves it to show logical reasoning steps. "
+        "Derive all valid conclusions, and output in JSON format. ",
         f"User: Suppose we have the first premise: {task_1_str} The second premise: {task_2_str} Assistant: ",
         json.dumps(results)
     ]
