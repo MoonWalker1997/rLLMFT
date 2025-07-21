@@ -141,7 +141,8 @@ def grade(jsons_LLM, jsons_Label):
             B += Bs
 
         return A / (B + 1e-5), summarization
-    except:
+    except Exception as e:
+        print("An error occurred:", e)
         summarization.add("Fatal error, cannot parsing")
         return 0, summarization
 
