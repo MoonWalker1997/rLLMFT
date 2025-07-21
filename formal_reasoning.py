@@ -150,7 +150,7 @@ def reasoning(task_1: Task, task_2: Task):
         # MP, SM -> SP(ded), PS('exe)
         t = Task(task_2.sub, task_1.obj, "-->", TFS.ded(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "ded")
         ret.append(t)
-        t = Task(task_2.obj, task_1.sub, "-->", TFS.exe_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "exp_p")
+        t = Task(task_2.obj, task_1.sub, "-->", TFS.exe_p(task_1.truth, task_2.truth), task_1.eb.union(task_2.eb), "exe_p")
         ret.append(t)
     elif task_1.obj == task_2.obj and task_1.copula == task_2.copula == "-->":
         # PM, SM -> SP(abd), PS('abd), S<>P('com)
