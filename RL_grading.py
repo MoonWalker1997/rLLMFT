@@ -17,7 +17,7 @@ def parsing_json(json_output):
             return None, None, []
         else:
             if "premise_2" in json_output:
-                premise_2 = json_output["premise_1"]
+                premise_2 = json_output["premise_2"]
                 if ("s" not in premise_2
                         or "o" not in premise_2
                         or "cp" not in premise_2
@@ -127,9 +127,9 @@ def grade(jsons_LLM, jsons_Label):
                 truth_1 = Truth(premise_1_LLM["f"], premise_1_LLM["c"])
                 truth_2 = Truth(premise_2_LLM["f"], premise_2_LLM["c"])
                 otb_truth = TFS.tf[each_result_LLM["r"]](truth_1, truth_2)
-                tmp_As += (1 - min(1, abs(each_result_LLM["f"] - otb_truth.f))) * 5
-                tmp_As += (1 - min(1, abs(each_result_LLM["c"] - otb_truth.c))) * 5
-                tmp_Bs += 10
+                tmp_As += (1 - min(1, abs(each_result_LLM["f"] - otb_truth.f))) * 50
+                tmp_As += (1 - min(1, abs(each_result_LLM["c"] - otb_truth.c))) * 50
+                tmp_Bs += 100
                 summarization.add(f"Ought-to-be truth-value: [{otb_truth.f}, {otb_truth.c}]. "
                                   f"LLM truth-value: [{each_result_LLM['f']}, {each_result_LLM['c']}]. ")
 
