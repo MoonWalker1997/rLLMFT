@@ -126,8 +126,8 @@ def grade(jsons_LLM, jsons_Label):
                 truth_1 = Truth(premise_1_LLM["f"], premise_1_LLM["c"])
                 truth_2 = Truth(premise_2_LLM["f"], premise_2_LLM["c"])
                 otb_truth = TFS.tf[each_result_LLM["r"]](truth_1, truth_2)
-                tmp_As += (1 - similarity_score(each_result_LLM["f"], otb_truth.f)) * 25
-                tmp_As += (1 - similarity_score(each_result_LLM["c"], otb_truth.c)) * 25
+                tmp_As += similarity_score(each_result_LLM["f"], otb_truth.f) * 25
+                tmp_As += similarity_score(each_result_LLM["c"], otb_truth.c) * 25
                 tmp_Bs += 50
                 summarization.add(f"Ought-to-be truth-value: [{otb_truth.f}, {otb_truth.c}]. "
                                   f"LLM truth-value: [{each_result_LLM['f']}, {each_result_LLM['c']}]. ")
