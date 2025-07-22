@@ -46,12 +46,11 @@ def parsing_json(json_output):
 
 
 def grade(jsons_LLM, jsons_Label):
-
     if "Assistant:" in jsons_LLM:
         jsons_LLM = jsons_LLM.split("Assistant:")[1].strip()
     if "Assistant:" in jsons_Label:
         jsons_Label = jsons_Label.split("Assistant:")[1].strip()
-    
+
     summarization = set()
 
     try:
@@ -127,9 +126,9 @@ def grade(jsons_LLM, jsons_Label):
                 truth_1 = Truth(premise_1_LLM["f"], premise_1_LLM["c"])
                 truth_2 = Truth(premise_2_LLM["f"], premise_2_LLM["c"])
                 otb_truth = TFS.tf[each_result_LLM["r"]](truth_1, truth_2)
-                tmp_As += (1 - min(1, abs(each_result_LLM["f"] - otb_truth.f))) * 50
-                tmp_As += (1 - min(1, abs(each_result_LLM["c"] - otb_truth.c))) * 50
-                tmp_Bs += 100
+                tmp_As += (1 - similarity_score(each_result_LLM["f"], otb_truth.f)) * 25
+                tmp_As += (1 - similarity_score(each_result_LLM["c"], otb_truth.c)) * 25
+                tmp_Bs += 50
                 summarization.add(f"Ought-to-be truth-value: [{otb_truth.f}, {otb_truth.c}]. "
                                   f"LLM truth-value: [{each_result_LLM['f']}, {each_result_LLM['c']}]. ")
 
@@ -147,23 +146,28 @@ def grade(jsons_LLM, jsons_Label):
         return 0, summarization
 
 
-if __name__ == "__main__":
-    # with (open("data/data_meta.csv", newline="", encoding="utf-8") as file):
-    #     reader = csv.reader(file, quoting=csv.QUOTE_NONE, escapechar='\\')
-    #     next(reader, None)
-    #     for each in reader:
-    #         print(each)
-    #         break
+def similarity_score(a, b):
+    diff = abs(a - b)
 
-    from_LLM = ('{"premise_1": {"s": "ID_55142", "o": "ID_68017", "cp": "-->", "f": 0.474, "c": 0.9, '
-                '"eb": [970, 2032]}, "premise_2": {"s": "ID_68017", "o": "ID_77508", "cp": "-->", "f": 0.193, '
-                '"c": 0.9, "eb": [9512]}, "results": [{"s": "ID_77508", "o": "ID_55142", "cp": "-->", '
-                '"f": 1.0, "c": 0.069, "eb": [970, 2032, 9512], "r": "exe"}, {"s": "ID_55142", '
-                '"o": "ID_77508", "cp": "-->", "f": 0.092, "c": 0.074, "eb": [970, 2032, 9512], '
-                '"r": "ded_p"}]}')
-    label = ('{"premise_1": {"s": "ID_55142", "o": "ID_68017", "cp": "-->", "f": 0.474, "c": 0.9, "eb": [970, '
-             '2032]}, "premise_2": {"s": "ID_68017", "o": "ID_77508", "cp": "-->", "f": 0.193, "c": 0.9, '
-             '"eb": [9512]}, "results": [{"s": "ID_77508", "o": "ID_55142", "cp": "-->", "f": 1.0, '
-             '"c": 0.069, "eb": [970, 2032, 9512], "r": "exe"}, {"s": "ID_55142", "o": "ID_77508", '
-             '"cp": "-->", "f": 0.092, "c": 0.074, "eb": [970, 2032, 9512], "r": "ded_p"}]}')
+    if diff <= 0.01:
+        return 1.0
+
+    elif diff <= 0.2:
+        norm_diff = (diff - 0.01) / 0.19
+        return 0.1 + 0.9 * (1 - norm_diff) ** 5
+
+    else:
+        return 0.1
+
+
+if __name__ == "__main__":
+
+    from_LLM = ('{"premise_1": {"s": "ID_59470", "o": "ID_425", "cp": "-->", "f": 0.802, "c": 0.9, "eb": [2927, '
+                '8201]}, "premise_2": {"s": "ID_20730", "o": "ID_59470", "cp": "<->", "f": 0.471, "c": 0.9, '
+                '"eb": [4889]}, "results": [{"s": "ID_20730", "o": "ID_425", "cp": "-->", "f": 0.394, "c": 0.382, '
+                '"eb": [2927, 4889, 8201], "r": "ana"}]}')
+    label = ('{"premise_1": {"s": "ID_59470", "o": "ID_425", "cp": "-->", "f": 0.954, "c": 0.9, "eb": [2927, 8201]}, '
+             '"premise_2": {"s": "ID_20730", "o": "ID_59470", "cp": "<->", "f": 0.508, "c": 0.9, "eb": [4889]}, '
+             '"results": [{"s": "ID_20730", "o": "ID_425", "cp": "-->", "f": 0.484, "c": 0.411, "eb": [2927, 4889, '
+             '8201], "r": "ana"}]}')
     print(grade(from_LLM, label))
