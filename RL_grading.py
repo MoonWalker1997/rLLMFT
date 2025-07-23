@@ -1,6 +1,8 @@
 import json
 
 import json_repair
+import numpy as np
+from scipy.optimize import linear_sum_assignment
 
 from formal_reasoning import Truth, TFS
 
@@ -100,44 +102,58 @@ def grade(jsons_LLM, jsons_Label):
                 B += 5
 
         # results grading
-        for each_result_label in results_label:
-            As, Bs = 0, 0
-            for each_result_LLM in results_LLM:
-                tmp_As, tmp_Bs = 0, 0
+
+        num_labels = len(results_label)
+        num_LLMs = len(results_LLM)
+        As_matrix = np.zeros((num_labels, num_LLMs))
+        Bs_matrix = np.zeros((num_labels, num_LLMs))
+        summarization_matrix = [[[] for _ in range(num_LLMs)] for _ in range(num_labels)]
+
+        for i, each_result_label in enumerate(results_label):
+            for j, each_result_LLM in enumerate(results_LLM):
+                tmp_as, tmp_bs = 0, 0
                 # grade on the consistency
                 for each_key in ["s", "o", "cp", "eb", "r"]:
                     if each_result_LLM is not None:
                         if each_key in each_result_LLM:
                             if each_result_label[each_key] == each_result_LLM[each_key]:
-                                tmp_As += 5
+                                tmp_as += 5
                             else:
-                                summarization.add(f"LLM result's key {each_key} inconsistent. "
-                                                  f"LLM result: {each_result_LLM}, "
-                                                  f"LLM {each_key}: {each_result_LLM[each_key]}, "
-                                                  f"label {each_key}: {each_result_label[each_key]}")
+                                summarization_matrix[i][j].append(
+                                    f"LLM result's key {each_key} inconsistent. "
+                                    f"LLM result: {each_result_LLM}, "
+                                    f"LLM {each_key}: {each_result_LLM[each_key]}, "
+                                    f"label {each_key}: {each_result_label[each_key]}")
                         else:
-                            summarization.add(f"LLM result does not have key {each_key}. "
-                                              f"LLM result: {each_result_LLM}")
+                            summarization_matrix[i][j].append(f"LLM result does not have key {each_key}. "
+                                                              f"LLM result: {each_result_LLM}")
                     else:
-                        summarization.add(f"LLM does not have any results")
-                    tmp_Bs += 5
+                        summarization_matrix[i][j].append(f"LLM does not have any results")
+                    tmp_bs += 5
 
                 # grade on the rule usage
                 truth_1 = Truth(premise_1_LLM["f"], premise_1_LLM["c"])
                 truth_2 = Truth(premise_2_LLM["f"], premise_2_LLM["c"])
                 otb_truth = TFS.tf[each_result_LLM["r"]](truth_1, truth_2)
-                tmp_As += similarity_score(each_result_LLM["f"], otb_truth.f) * 25
-                tmp_As += similarity_score(each_result_LLM["c"], otb_truth.c) * 25
-                tmp_Bs += 50
-                summarization.add(f"Ought-to-be truth-value: [{otb_truth.f}, {otb_truth.c}]. "
-                                  f"LLM truth-value: [{each_result_LLM['f']}, {each_result_LLM['c']}]. ")
+                tmp_as += (1 - similarity_score(each_result_LLM["f"], otb_truth.f)) * 25
+                tmp_as += (1 - similarity_score(each_result_LLM["c"], otb_truth.c)) * 25
+                tmp_bs += 50
+                summarization_matrix[i][j].append(f"Ought-to-be truth-value: [{otb_truth.f}, {otb_truth.c}]. "
+                                                  f"LLM truth-value: [{each_result_LLM['f']}, {each_result_LLM['c']}]")
 
-                if tmp_As > As:
-                    As = tmp_As
-                if tmp_Bs > Bs:
-                    Bs = tmp_Bs
-            A += As
-            B += Bs
+                As_matrix[i, j] = tmp_as
+                Bs_matrix[i, j] = tmp_bs
+
+        cost_matrix = -As_matrix
+        row_ind, col_ind = linear_sum_assignment(cost_matrix)
+
+        for i in range(min(num_labels, num_LLMs)):  # Handle if sizes differ, but ideally they are equal
+            matched_as = As_matrix[row_ind[i], col_ind[i]]
+            matched_bs = Bs_matrix[row_ind[i], col_ind[i]]
+            A += matched_as
+            B += matched_bs
+            for msg in summarization_matrix[row_ind[i]][col_ind[i]]:
+                summarization.add(msg)
 
         return A / (B + 1e-5), summarization
     except Exception as e:
@@ -161,13 +177,16 @@ def similarity_score(a, b):
 
 
 if __name__ == "__main__":
-
-    from_LLM = ('{"premise_1": {"s": "ID_59470", "o": "ID_425", "cp": "-->", "f": 0.802, "c": 0.9, "eb": [2927, '
-                '8201]}, "premise_2": {"s": "ID_20730", "o": "ID_59470", "cp": "<->", "f": 0.471, "c": 0.9, '
-                '"eb": [4889]}, "results": [{"s": "ID_20730", "o": "ID_425", "cp": "-->", "f": 0.394, "c": 0.382, '
-                '"eb": [2927, 4889, 8201], "r": "ana"}]}')
-    label = ('{"premise_1": {"s": "ID_59470", "o": "ID_425", "cp": "-->", "f": 0.954, "c": 0.9, "eb": [2927, 8201]}, '
+    from_LLM = ('{'
+                '"premise_1": {"s": "ID_59470", "o": "ID_425", "cp": "-->", "f": 0.802, "c": 0.9, "eb": [2927, 8201]}, '
+                '"premise_2": {"s": "ID_20730", "o": "ID_59470", "cp": "<->", "f": 0.471, "c": 0.9, "eb": [4889]}, '
+                '"results": ['
+                '{"s": "ID_20730", "o": "ID_425", "cp": "-->", "f": 0.394, "c": 0.382, "eb": [2927, 4889, 8201], "r": "ana"}'
+                '{"s": "ID_425", "o": "ID_20730", "cp": "-->", "f": 0.394, "c": 0.382, "eb": [2927, 4889, 8201], "r": "ana_p"}'
+                ']}')
+    label = ('{'
+             '"premise_1": {"s": "ID_59470", "o": "ID_425", "cp": "-->", "f": 0.954, "c": 0.9, "eb": [2927, 8201]}, '
              '"premise_2": {"s": "ID_20730", "o": "ID_59470", "cp": "<->", "f": 0.508, "c": 0.9, "eb": [4889]}, '
-             '"results": [{"s": "ID_20730", "o": "ID_425", "cp": "-->", "f": 0.484, "c": 0.411, "eb": [2927, 4889, '
-             '8201], "r": "ana"}]}')
+             '"results": ['
+             '{"s": "ID_20730", "o": "ID_425", "cp": "-->", "f": 0.484, "c": 0.411, "eb": [2927, 4889, 8201], "r": "ana"}]}')
     print(grade(from_LLM, label))
