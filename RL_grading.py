@@ -1,6 +1,6 @@
 import json
+import re
 
-import json_repair
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
@@ -47,6 +47,92 @@ def parsing_json(json_output):
         return None, None, []
 
 
+def soft_parsing_json(llm_output: str):
+    try:
+        parsed = json.loads(llm_output)
+        p1, p2, res = _extract_premises_results(parsed)
+        if p1 and p2:
+            return p1, p2, res, True
+    except Exception as e:
+
+        premise_1 = _extract_block(llm_output, "premise_1")
+        premise_2 = _extract_block(llm_output, "premise_2")
+        results_block = _extract_results_block(llm_output)
+
+        p1 = _fill_premise(premise_1)
+        p2 = _fill_premise(premise_2)
+        res = [_fill_result(r) for r in results_block]
+
+        return p1, p2, res, False
+
+
+def _extract_block(text, key):
+    pattern = rf'"?{key}"?\s*:\s*{{(.*?)}}'
+    m = re.search(pattern, text, re.S)
+    return m.group(1) if m else ""
+
+
+def _extract_results_block(text):
+    pattern = r'"?results"?\s*:\s*\[(.*?)\]'
+    m = re.search(pattern, text, re.S)
+    if not m:
+        return []
+    raw = m.group(1)
+    return re.findall(r'{(.*?)}', raw, re.S)
+
+
+def _extract_field(block, field):
+    pattern = rf'"?{field}"?\s*:\s*("?[\w\.\-\[\], ]+"?)'
+    m = re.search(pattern, block)
+    return m.group(1).strip('"') if m else None
+
+
+def _fill_premise(block):
+    return {
+        "s": _extract_field(block, "s"),
+        "o": _extract_field(block, "o"),
+        "cp": _extract_field(block, "cp"),
+        "f": _safe_float(_extract_field(block, "f")),
+        "c": _safe_float(_extract_field(block, "c")),
+        "eb": _safe_list(_extract_field(block, "eb"))
+    } if block else None
+
+
+def _fill_result(block):
+    return {
+        "s": _extract_field(block, "s"),
+        "o": _extract_field(block, "o"),
+        "cp": _extract_field(block, "cp"),
+        "f": _safe_float(_extract_field(block, "f")),
+        "c": _safe_float(_extract_field(block, "c")),
+        "eb": _safe_list(_extract_field(block, "eb")),
+        "r": _extract_field(block, "r")
+    } if block else {}
+
+
+def _safe_float(x):
+    try:
+        return float(x)
+    except:
+        return 0.0
+
+
+def _safe_list(x):
+    if not x:
+        return []
+    x = re.sub(r'[\[\]]', '', x)
+    return [int(i) for i in re.findall(r'\d+', x)]
+
+
+def _extract_premises_results(parsed):
+    if not isinstance(parsed, dict):
+        return None, None, []
+    p1 = parsed.get("premise_1")
+    p2 = parsed.get("premise_2")
+    res = parsed.get("results", [])
+    return p1, p2, res
+
+
 def grade(jsons_LLM, jsons_Label):
     if "Assistant:" in jsons_LLM:
         jsons_LLM = jsons_LLM.split("Assistant:")[1].strip()
@@ -56,13 +142,8 @@ def grade(jsons_LLM, jsons_Label):
     summarization = set()
 
     try:
-        try:
-            # premise_1_LLM, premise_2_LLM, results_LLM = parsing_json(json.loads(json_repair.repair_json(jsons_LLM)))
-            premise_1_LLM, premise_2_LLM, results_LLM = parsing_json(json.loads(jsons_LLM))
-        except ValueError as e:
-            print("JSON parsing/repairing failed!")
-            # print("Error:", e)
-            premise_1_LLM, premise_2_LLM, results_LLM = None, None, []
+
+        premise_1_LLM, premise_2_LLM, results_LLM, parsing_succeed = soft_parsing_json(jsons_LLM)
 
         # the label json is always valid
         premise_1_label, premise_2_label, results_label = parsing_json(json.loads(jsons_Label))
@@ -156,7 +237,7 @@ def grade(jsons_LLM, jsons_Label):
             for msg in summarization_matrix[row_ind[i]][col_ind[i]]:
                 summarization.add(msg)
 
-        return max(0.1, A / (B + 1e-5)), summarization
+        return max(0.1, A / (B + 1e-5) if parsing_succeed else A / (B + 1e-5) * 0.5), summarization
     except Exception as e:
         print("An error occurred:", e)
         summarization.add("Fatal error, cannot parsing")
@@ -185,6 +266,11 @@ if __name__ == "__main__":
                 '{"s": "ID_20730", "o": "ID_425", "cp": "-->", "f": 0.394, "c": 0.382, "eb": [2927, 4889, 8201], "r": "ana"}'
                 '{"s": "ID_425", "o": "ID_20730", "cp": "-->", "f": 0.394, "c": 0.382, "eb": [2927, 4889, 8201], "r": "ana_p"}'
                 ']}')
+    # from_LLM = ('{'
+    #             '"premise_1": {"s": "ID_59470", "o": "ID_425", "cp": "-->", "f": 0.954, "c": 0.9, "eb": [2927, 8201]}, '
+    #             '"premise_2": {"s": "ID_20730", "o": "ID_59470", "cp": "<->", "f": 0.508, "c": 0.9, "eb": [4889]}, '
+    #             '"results": ['
+    #             '{"s": "ID_20730", "o": "ID_425", "cp": "-->", "f": 0.484, "c": 0.411, "eb": [2927, 4889, 8201], "r": "ana"}]}')
     label = ('{'
              '"premise_1": {"s": "ID_59470", "o": "ID_425", "cp": "-->", "f": 0.954, "c": 0.9, "eb": [2927, 8201]}, '
              '"premise_2": {"s": "ID_20730", "o": "ID_59470", "cp": "<->", "f": 0.508, "c": 0.9, "eb": [4889]}, '
