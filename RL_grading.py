@@ -156,11 +156,11 @@ def grade(jsons_LLM, jsons_Label):
             for msg in summarization_matrix[row_ind[i]][col_ind[i]]:
                 summarization.add(msg)
 
-        return A / (B + 1e-5), summarization
+        return max(0.1, A / (B + 1e-5)), summarization
     except Exception as e:
         print("An error occurred:", e)
         summarization.add("Fatal error, cannot parsing")
-        return 0, summarization
+        return 0.1, summarization
 
 
 def similarity_score(a, b):
