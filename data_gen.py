@@ -16,22 +16,37 @@ def prompt(task_1_str, task_2_str, results: dict):
 
 
 if __name__ == "__main__":
+    
     parser = argparse.ArgumentParser()
+    
     parser.add_argument("--num_data", type=int, default=10, help="Number of data samples to generate")
-    parser.add_argument("--num_template", type=int, default=10, help="Number of templates to use")
-    parser.add_argument("--num_category", type=int, default=5, help="Number of categories to use")
+    parser.add_argument("--num_templates", type=int, default=10, help="Number of templates to use")
+    parser.add_argument("--num_categories", type=int, default=5, help="Number of categories to use")
+    parser.add_argument("--num_variations", type=int, default=0, help="Number of variations of each data item")
+    parser.add_argument("--num_models", type=int, default=1, help="Number of LLM models used")
+    parser.add_argument("--model_idx", type=int, default=0, help="The index of the current training model")
+    parser.add_argument("--uniform_sampling", type=bool, default=False,
+                        help="Whether to use uniform sampling, True when testing")
+    parser.add_argument("--focus_prob", type=float, default=0.7, help="Probability of focusing")
+    
     args = parser.parse_args()
+    
     num_data = args.num_data
-    num_template = args.num_template
-    num_category = args.num_category
-
+    num_templates = args.num_templates
+    num_categories = args.num_categories
+    num_variations = args.num_variations
+    num_models = args.num_models
+    model_index = args.model_idx
+    uniform_sampling = args.uniform_sampling
+    focus_prob = args.focus_prob
+    
     os.makedirs("data", exist_ok=True)
-
-    inheritance_templates = _inheritance_templates[:num_template]
-    similarity_templates = _similarity_templates[:num_template]
-    truth_categories = [[each[0], each[1], each[2][:num_category]] for each in _truth_categories]
-
-    raw_data = gen_random_reasoning(num_data, inheritance_templates, similarity_templates, truth_categories)
+    
+    inheritance_templates = _inheritance_templates[:num_templates]
+    similarity_templates = _similarity_templates[:num_templates]
+    truth_categories = [[each[0], each[1], each[2][:num_categories]] for each in _truth_categories]
+    
+    raw_data = gen_random_reasoning(num_data, inheritance_templates, similarity_templates, truth_categories, num_variations, model_index, num_models, uniform_sampling, focus_prob)
     raw_data = [each[0] for each in raw_data]
 
     meta_data = [prompt(*each) for each in raw_data]
