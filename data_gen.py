@@ -28,6 +28,7 @@ if __name__ == "__main__":
     parser.add_argument("--uniform_sampling", type=bool, default=False,
                         help="Whether to use uniform sampling, True when testing")
     parser.add_argument("--focus_prob", type=float, default=0.7, help="Probability of focusing")
+    parser.add_argument("--random_seed", type=int, default=39, help="Random seed")
     
     args = parser.parse_args()
     
@@ -39,6 +40,7 @@ if __name__ == "__main__":
     model_index = args.model_idx
     uniform_sampling = args.uniform_sampling
     focus_prob = args.focus_prob
+    random_seed = args.random_seed
     
     os.makedirs("data", exist_ok=True)
     
@@ -46,7 +48,7 @@ if __name__ == "__main__":
     similarity_templates = _similarity_templates[:num_templates]
     truth_categories = [[each[0], each[1], each[2][:num_categories]] for each in _truth_categories]
     
-    raw_data = gen_random_reasoning(num_data, inheritance_templates, similarity_templates, truth_categories, num_variations, model_index, num_models, uniform_sampling, focus_prob)
+    raw_data = gen_random_reasoning(num_data, inheritance_templates, similarity_templates, truth_categories, num_variations, model_index, num_models, uniform_sampling, focus_prob, random_seed)
     raw_data = [each[0] for each in raw_data]
 
     meta_data = [prompt(*each) for each in raw_data]
