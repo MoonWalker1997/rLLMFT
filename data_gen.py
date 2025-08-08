@@ -23,7 +23,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_templates", type=int, default=10, help="Number of templates to use")
     parser.add_argument("--num_categories", type=int, default=5, help="Number of categories to use")
     parser.add_argument("--num_variations", type=int, default=0, help="Number of variations of each data item")
-    parser.add_argument("--num_models", type=int, default=1, help="Number of LLM models used")
+    parser.add_argument("--num_models", type=int, default=3, help="Number of LLM models used")
     parser.add_argument("--model_idx", type=int, default=0, help="The index of the current training model")
     parser.add_argument("--uniform_sampling", type=bool, default=False,
                         help="Whether to use uniform sampling, True when testing")
