@@ -316,7 +316,7 @@ def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=N
     for _ in range(n):
         
         if uniform_sampling:
-            case = random.choice(range(len(cases)))
+            case = random.choice(cases)
         else:
             if random.random() < focus_prob:
                 case = random.choice(focus_cases)
@@ -327,7 +327,7 @@ def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=N
         M = f"ID_{random.randint(0, 100000)}"
         P = f"ID_{random.randint(0, 100000)}"
         if len({S, M, P}) == 3:
-            if case == 0:
+            if case == cases[0]:
                 # MP, SM
                 for _ in range(1 + num_variations):
                     J1 = Task(M, P, "-->", Truth(random.random(), 0.9),
@@ -338,7 +338,7 @@ def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=N
                     ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
                                  render_input(J2, inheritance_templates, similarity_templates, truth_categories),
                                  parse_output(J1, J2, Rs)], [J1, J2, Rs]])
-            elif case == 1:
+            elif case == cases[1]:
                 # PM, SM
                 for _ in range(1 + num_variations):
                     J1 = Task(P, M, "-->", Truth(random.random(), 0.9),
@@ -349,7 +349,7 @@ def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=N
                     ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
                                  render_input(J2, inheritance_templates, similarity_templates, truth_categories),
                                  parse_output(J1, J2, Rs)], [J1, J2, Rs]])
-            elif case == 2:
+            elif case == cases[2]:
                 # M<>P, SM
                 for _ in range(1 + num_variations):
                     J1 = Task(M, P, "<->", Truth(random.random(), 0.9),
@@ -359,7 +359,7 @@ def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=N
                     Rs = reasoning(J1, J2)
                     ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
                                  render_input(J2, inheritance_templates, similarity_templates, truth_categories), parse_output(J1, J2, Rs)], [J1, J2, Rs]])
-            elif case == 3:
+            elif case == cases[3]:
                 # MP, MS
                 for _ in range(1 + num_variations):
                     J1 = Task(M, P, "-->", Truth(random.random(), 0.9),
@@ -370,7 +370,7 @@ def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=N
                     ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
                                  render_input(J2, inheritance_templates, similarity_templates, truth_categories),
                                  parse_output(J1, J2, Rs)], [J1, J2, Rs]])
-            elif case == 4:
+            elif case == cases[4]:
                 # PM, MS
                 for _ in range(1 + num_variations):
                     J1 = Task(P, M, "-->", Truth(random.random(), 0.9),
@@ -381,7 +381,7 @@ def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=N
                     ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
                                  render_input(J2, inheritance_templates, similarity_templates, truth_categories),
                                  parse_output(J1, J2, Rs)], [J1, J2, Rs]])
-            elif case == 5:
+            elif case == cases[5]:
                 # M<>P, MS
                 for _ in range(1 + num_variations):
                     J1 = Task(M, P, "<->", Truth(random.random(), 0.9),
@@ -392,7 +392,7 @@ def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=N
                     ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
                                  render_input(J2, inheritance_templates, similarity_templates, truth_categories),
                                  parse_output(J1, J2, Rs)], [J1, J2, Rs]])
-            elif case == 6:
+            elif case == cases[6]:
                 # MP, S<>M
                 for _ in range(1 + num_variations):
                     J1 = Task(M, P, "-->", Truth(random.random(), 0.9),
@@ -403,7 +403,7 @@ def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=N
                     ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
                                  render_input(J2, inheritance_templates, similarity_templates, truth_categories),
                                  parse_output(J1, J2, Rs)], [J1, J2, Rs]])
-            elif case == 7:
+            elif case == cases[7]:
                 # PM, S<>M
                 for _ in range(1 + num_variations):
                     J1 = Task(P, M, "-->", Truth(random.random(), 0.9),
@@ -414,7 +414,7 @@ def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=N
                     ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
                                  render_input(J2, inheritance_templates, similarity_templates, truth_categories),
                                  parse_output(J1, J2, Rs)], [J1, J2, Rs]])
-            elif case == 8:
+            elif case == cases[8]:
                 # M<>P, S<>M
                 for _ in range(1 + num_variations):
                     J1 = Task(M, P, "<->", Truth(random.random(), 0.9),
@@ -429,9 +429,10 @@ def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=N
 
 
 if __name__ == "__main__":
-    t1 = Task("A", "B", "-->", Truth(), {0})
-    t2 = Task("B", "C", "-->", Truth(), {1})
-    samples = gen_random_reasoning(num_variations=2)
+    # t1 = Task("A", "B", "-->", Truth(), {0})
+    # t2 = Task("B", "C", "-->", Truth(), {1})
+    print(1)
+    samples = gen_random_reasoning(num_variations=0, num_models=3, model_index=0)
     print(samples)
     
 
