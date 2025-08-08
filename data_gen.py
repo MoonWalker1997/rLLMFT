@@ -53,26 +53,45 @@ if __name__ == "__main__":
 
     meta_data = [prompt(*each) for each in raw_data]
 
-    with open("data/data_meta.csv", "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f, quoting=csv.QUOTE_NONE, escapechar="\\")
-        writer.writerow(["Introduction", "Premise", "Answer"])
-        for row in meta_data:
-            writer.writerow(row)
-
-    chunking_data = []
-    max_length = -1
-    for intro, premise, answer in meta_data:
-        # chunk1 = intro + premise
-        # chunk2 = premise + answer
-        # max_length = max(max_length, len(chunk1), len(chunk2))
-        # chunking_data.extend([chunk1, chunk2])
-        chunking_data.append(intro + premise + answer)
-
-    with open("data/data_chunk.csv", "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f, quoting=csv.QUOTE_NONE, escapechar="\\")
-        writer.writerow(["chunk"])
-        for chunk in chunking_data:
-            writer.writerow([chunk])
-
-    if max_length != -1:
-        print(f"Max length of chunked text: {max_length}")
+    if not uniform_sampling:
+        with open(f"data/data_meta_{model_index}.csv", "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, quoting=csv.QUOTE_NONE, escapechar="\\")
+            writer.writerow(["Introduction", "Premise", "Answer"])
+            for row in meta_data:
+                writer.writerow(row)
+        chunking_data = []
+        max_length = -1
+        for intro, premise, answer in meta_data:
+            # chunk1 = intro + premise
+            # chunk2 = premise + answer
+            # max_length = max(max_length, len(chunk1), len(chunk2))
+            # chunking_data.extend([chunk1, chunk2])
+            chunking_data.append(intro + premise + answer)
+        with open(f"data/data_chunk_{model_index}.csv", "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, quoting=csv.QUOTE_NONE, escapechar="\\")
+            writer.writerow(["chunk"])
+            for chunk in chunking_data:
+                writer.writerow([chunk])
+        if max_length != -1:
+            print(f"Max length of chunked text: {max_length}")
+    else:
+        with open("data/data_meta_test.csv", "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, quoting=csv.QUOTE_NONE, escapechar="\\")
+            writer.writerow(["Introduction", "Premise", "Answer"])
+            for row in meta_data:
+                writer.writerow(row)
+        chunking_data = []
+        max_length = -1
+        for intro, premise, answer in meta_data:
+            # chunk1 = intro + premise
+            # chunk2 = premise + answer
+            # max_length = max(max_length, len(chunk1), len(chunk2))
+            # chunking_data.extend([chunk1, chunk2])
+            chunking_data.append(intro + premise + answer)
+        with open("data/data_chunk_test.csv", "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, quoting=csv.QUOTE_NONE, escapechar="\\")
+            writer.writerow(["chunk"])
+            for chunk in chunking_data:
+                writer.writerow([chunk])
+        if max_length != -1:
+            print(f"Max length of chunked text: {max_length}")
