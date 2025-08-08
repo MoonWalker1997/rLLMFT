@@ -287,7 +287,7 @@ def parse_output(task_1: Task, task_2: Task, results: [Task, ...]):
     return ret
 
 
-def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=None, truth_categories=None, num_variations=0):
+def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=None, truth_categories=None, num_variations=0, model_index=0, num_models=1, uniform_sampling=False, focus_prob=0.7):
 
     if truth_categories is None:
         truth_categories = _truth_categories
@@ -298,8 +298,31 @@ def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=N
 
     ret = []
     cases = ["MP, SM", "PM, SM", "M<>P, SM", "MP, MS", "PM, MS", "M<>P, MS", "MP, S<>M", "PM, S<>M", "M<>P, S<>M"]
+
+    if not uniform_sampling:
+        rng = random.Random(39)
+        shuffled_cases = cases[:]
+        rng.shuffle(shuffled_cases)
+        
+        total = len(shuffled_cases)
+        chunk_size = (total + num_models - 1) // num_models
+        start = model_index * chunk_size
+        end = min(start + chunk_size, total)
+        focus_cases = shuffled_cases[start:end]
+        other_cases = [c for c in cases if c not in focus_cases]
+    else:
+        focus_cases, other_cases = cases, cases
+
     for _ in range(n):
-        case = random.choice(range(len(cases)))
+        
+        if uniform_sampling:
+            case = random.choice(range(len(cases)))
+        else:
+            if random.random() < focus_prob:
+                case = random.choice(focus_cases)
+            else:
+                case = random.choice(other_cases)
+                
         S = f"ID_{random.randint(0, 100000)}"
         M = f"ID_{random.randint(0, 100000)}"
         P = f"ID_{random.randint(0, 100000)}"
@@ -411,3 +434,4 @@ if __name__ == "__main__":
     samples = gen_random_reasoning(num_variations=2)
     print(samples)
     
+
