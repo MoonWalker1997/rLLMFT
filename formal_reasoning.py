@@ -287,7 +287,7 @@ def parse_output(task_1: Task, task_2: Task, results: [Task, ...]):
     return ret
 
 
-def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=None, truth_categories=None, num_variations=0, model_index=0, num_models=1, uniform_sampling=False, focus_prob=0.7):
+def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=None, truth_categories=None, num_variations=0, model_index=0, num_models=1, uniform_sampling=False, focus_prob=0.7, random_seed=39):
 
     if truth_categories is None:
         truth_categories = _truth_categories
@@ -300,7 +300,7 @@ def gen_random_reasoning(n=1, inheritance_templates=None, similarity_templates=N
     cases = ["MP, SM", "PM, SM", "M<>P, SM", "MP, MS", "PM, MS", "M<>P, MS", "MP, S<>M", "PM, S<>M", "M<>P, S<>M"]
 
     if not uniform_sampling:
-        rng = random.Random(39)
+        rng = random.Random(random_seed)
         shuffled_cases = cases[:]
         rng.shuffle(shuffled_cases)
         
@@ -434,4 +434,5 @@ if __name__ == "__main__":
     samples = gen_random_reasoning(num_variations=2)
     print(samples)
     
+
 
