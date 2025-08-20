@@ -2,15 +2,20 @@ import os
 import csv
 import json
 import argparse
+import random
 
-from formal_reasoning import gen_random_reasoning, _inheritance_templates, _similarity_templates, _truth_categories
+from formal_reasoning import gen_random_reasoning, _inheritance_templates, _similarity_templates, _truth_categories, \
+    _inheritance_templates_q, _similarity_templates_q, Generator
 
 
-def prompt(task_1_str, task_2_str, results: dict):
+def generate_raw_prompt(task_1_str, task_2_str, question_str, results: dict):
     return [
-        "A conversation between User and Assistant. The user asks a question, and the Assistant solves it to show logical reasoning steps. "
-        "Derive all valid conclusions, and output **only** in valid JSON format. ",
-        f"User: Suppose we have the first premise: {task_1_str} The second premise: {task_2_str} Assistant: ",
+        "A conversation between User and Assistant. The user provides the background knowledge and asks a question. "
+        "The Assistant needs to solve it showing logical reasoning steps. "
+        "**Only** derive the asked conclusion and output **only** in valid JSON format. ",
+        f"Suppose we have the first premise: {task_1_str} "
+        f"The second premise: {task_2_str} ",
+        f"Could you please answer the question: {question_str}? ",
         json.dumps(results)
     ]
 
@@ -22,12 +27,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_data", type=int, default=10, help="Number of data samples to generate")
     parser.add_argument("--num_templates", type=int, default=10, help="Number of templates to use")
     parser.add_argument("--num_categories", type=int, default=5, help="Number of categories to use")
-    parser.add_argument("--num_variations", type=int, default=0, help="Number of variations of each data item")
     parser.add_argument("--num_models", type=int, default=3, help="Number of LLM models used")
-    parser.add_argument("--model_idx", type=int, default=0, help="The index of the current training model")
-    parser.add_argument("--uniform_sampling", type=bool, default=False,
-                        help="Whether to use uniform sampling, True when testing")
-    parser.add_argument("--focus_prob", type=float, default=0.7, help="Probability of focusing")
     parser.add_argument("--random_seed", type=int, default=39, help="Random seed")
     
     args = parser.parse_args()
@@ -35,63 +35,48 @@ if __name__ == "__main__":
     num_data = args.num_data
     num_templates = args.num_templates
     num_categories = args.num_categories
-    num_variations = args.num_variations
     num_models = args.num_models
-    model_index = args.model_idx
-    uniform_sampling = args.uniform_sampling
-    focus_prob = args.focus_prob
     random_seed = args.random_seed
+
+    random.seed(random_seed)
+    _inh_template_indices = random.sample(range(len(_inheritance_templates)), num_templates)
+    _sim_template_indices = random.sample(range(len(_similarity_templates)), num_templates)
     
-    os.makedirs("data", exist_ok=True)
-    
-    inheritance_templates = _inheritance_templates[:num_templates]
-    similarity_templates = _similarity_templates[:num_templates]
+    inheritance_templates = [_inheritance_templates[each] for each in _inh_template_indices]
+    inheritance_templates_q = [_inheritance_templates_q[each] for each in _inh_template_indices]
+
+    similarity_templates = [_similarity_templates[each] for each in _sim_template_indices]
+    similarity_templates_q = [_similarity_templates_q[each] for each in _sim_template_indices]
+
     truth_categories = [[each[0], each[1], each[2][:num_categories]] for each in _truth_categories]
+
+    G = Generator(random_seed)
+    os.makedirs("data", exist_ok=True)
+
+    for model_index in range(num_models):
     
-    raw_data = gen_random_reasoning(num_data, inheritance_templates, similarity_templates, truth_categories, num_variations, model_index, num_models, uniform_sampling, focus_prob, random_seed)
+        raw_data = G.gen_random_reasoning(num_data,
+                                          inheritance_templates, inheritance_templates_q,
+                                          similarity_templates, similarity_templates_q,
+                                          truth_categories,
+                                          model_index, num_models, False)
+        raw_data = [each[0] for each in raw_data]
+        table = [generate_raw_prompt(*each) for each in raw_data]
+        with open(f"data/data_table_{model_index}_{num_models}.csv", "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(["Introduction", "Premise", "Question", "Answer"])
+            for row in table:
+                writer.writerow(row)
+
+    raw_data = G.gen_random_reasoning(num_data,
+                                      inheritance_templates, inheritance_templates_q,
+                                      similarity_templates, similarity_templates_q,
+                                      truth_categories,
+                                      -1, -1, True)
     raw_data = [each[0] for each in raw_data]
-
-    meta_data = [prompt(*each) for each in raw_data]
-
-    if not uniform_sampling:
-        with open(f"data/data_meta_{model_index}.csv", "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f, quoting=csv.QUOTE_NONE, escapechar="\\")
-            writer.writerow(["Introduction", "Premise", "Answer"])
-            for row in meta_data:
-                writer.writerow(row)
-        chunking_data = []
-        max_length = -1
-        for intro, premise, answer in meta_data:
-            # chunk1 = intro + premise
-            # chunk2 = premise + answer
-            # max_length = max(max_length, len(chunk1), len(chunk2))
-            # chunking_data.extend([chunk1, chunk2])
-            chunking_data.append(intro + premise + answer)
-        with open(f"data/data_chunk_{model_index}.csv", "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f, quoting=csv.QUOTE_NONE, escapechar="\\")
-            writer.writerow(["chunk"])
-            for chunk in chunking_data:
-                writer.writerow([chunk])
-        if max_length != -1:
-            print(f"Max length of chunked text: {max_length}")
-    else:
-        with open("data/data_meta_test.csv", "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f, quoting=csv.QUOTE_NONE, escapechar="\\")
-            writer.writerow(["Introduction", "Premise", "Answer"])
-            for row in meta_data:
-                writer.writerow(row)
-        chunking_data = []
-        max_length = -1
-        for intro, premise, answer in meta_data:
-            # chunk1 = intro + premise
-            # chunk2 = premise + answer
-            # max_length = max(max_length, len(chunk1), len(chunk2))
-            # chunking_data.extend([chunk1, chunk2])
-            chunking_data.append(intro + premise + answer)
-        with open("data/data_chunk_test.csv", "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f, quoting=csv.QUOTE_NONE, escapechar="\\")
-            writer.writerow(["chunk"])
-            for chunk in chunking_data:
-                writer.writerow([chunk])
-        if max_length != -1:
-            print(f"Max length of chunked text: {max_length}")
+    table = [generate_raw_prompt(*each) for each in raw_data]
+    with open("data/data_table_test.csv", "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(["Introduction", "Premise", "Question", "Answer"])
+        for row in table:
+            writer.writerow(row)
