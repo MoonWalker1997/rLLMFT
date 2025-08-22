@@ -3,7 +3,7 @@ import json
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
-from formal_reasoning import Task, Truth, reasoning, TFS
+from .formal_reasoning import Task, Truth, reasoning
 
 
 def parsing_json(json_output):
@@ -104,7 +104,7 @@ def grade_0(json_output):
         a += A[row_i, col_i]
         b += B[row_i, col_i]
 
-    return max(0.1, a / (b + 1e-5))
+    return float(max(0.1, a / (b + 1e-5)))
 
 
 def grade_1(llm_json_output, label_json_output):
@@ -125,7 +125,7 @@ def grade_1(llm_json_output, label_json_output):
                 a += 5
             b += 5
 
-    return max(0.1, a / (b + 1e-5))
+    return float(max(0.1, a / (b + 1e-5)))
 
 
 if __name__ == "__main__":

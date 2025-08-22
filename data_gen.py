@@ -4,8 +4,8 @@ import json
 import argparse
 import random
 
-from formal_reasoning import gen_random_reasoning, _inheritance_templates, _similarity_templates, _truth_categories, \
-    _inheritance_templates_q, _similarity_templates_q, Generator
+from .formal_reasoning import (_inheritance_templates, _similarity_templates, _truth_categories,
+                               _inheritance_templates_q, _similarity_templates_q, Generator)
 
 
 def generate_raw_prompt(task_1_str, task_2_str, question_str, results: dict):
@@ -21,17 +21,17 @@ def generate_raw_prompt(task_1_str, task_2_str, question_str, results: dict):
 
 
 if __name__ == "__main__":
-    
+
     parser = argparse.ArgumentParser()
-    
+
     parser.add_argument("--num_data", type=int, default=10, help="Number of data samples to generate")
     parser.add_argument("--num_templates", type=int, default=10, help="Number of templates to use")
     parser.add_argument("--num_categories", type=int, default=5, help="Number of categories to use")
     parser.add_argument("--num_models", type=int, default=3, help="Number of LLM models used")
     parser.add_argument("--random_seed", type=int, default=39, help="Random seed")
-    
+
     args = parser.parse_args()
-    
+
     num_data = args.num_data
     num_templates = args.num_templates
     num_categories = args.num_categories
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     random.seed(random_seed)
     _inh_template_indices = random.sample(range(len(_inheritance_templates)), num_templates)
     _sim_template_indices = random.sample(range(len(_similarity_templates)), num_templates)
-    
+
     inheritance_templates = [_inheritance_templates[each] for each in _inh_template_indices]
     inheritance_templates_q = [_inheritance_templates_q[each] for each in _inh_template_indices]
 
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     os.makedirs("data", exist_ok=True)
 
     for model_index in range(num_models):
-    
+
         raw_data = G.gen_random_reasoning(num_data,
                                           inheritance_templates, inheritance_templates_q,
                                           similarity_templates, similarity_templates_q,
