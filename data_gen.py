@@ -4,8 +4,8 @@ import json
 import argparse
 import random
 
-from .formal_reasoning import (_inheritance_templates, _similarity_templates, _truth_categories,
-                               _inheritance_templates_q, _similarity_templates_q, Generator)
+from formal_reasoning import (_inheritance_templates, _similarity_templates, _truth_categories,
+                              _inheritance_templates_q, _similarity_templates_q, Generator)
 
 
 def generate_raw_prompt(task_1_str, task_2_str, question_str, results: dict):
