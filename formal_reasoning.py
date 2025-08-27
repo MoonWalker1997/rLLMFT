@@ -1,7 +1,9 @@
-import copy
 import random
 
 import numpy as np
+
+from config import cs, _inheritance_templates, _inheritance_templates_q, _similarity_templates, _similarity_templates_q, \
+    _truth_categories
 
 
 class Task:
@@ -52,15 +54,18 @@ class Truth:
 
     @property
     def w(self):
-        return self.c * (1 - self.c)
+        return self.c / (1 - self.c)
 
     @property
     def wp(self):
-        return self.w + self.f
+        return self.w * self.f
 
     @property
     def wn(self):
         return self.w * (1 - self.f)
+
+    def __str__(self):
+        return f"%{round(self.f, 3)};{round(self.c, 3)}%"
 
 
 class TruthFunctions:
@@ -221,108 +226,6 @@ def reasoning(task_1: Task, task_2: Task):
     return ret
 
 
-_truth_categories = [
-    (0.0, 0.2, ["is false", "completely false", "does not hold", "has been refuted", "is incorrect"]),
-    (0.2, 0.4, ["is mostly false", "tends to be false", "seems incorrect", "barely holds", "is generally wrong"]),
-    (0.4, 0.6,
-     ["is unknown", "is undetermined", "cannot be classified", "its truth is unclear", "is neither true nor false"]),
-    (0.6, 0.8, ["is mostly true", "tends to be true", "seems correct", "largely holds", "is generally valid"]),
-    (0.8, 1.01, ["is true", "completely holds", "has been confirmed", "is correct", "is a fact"])
-]
-
-_inheritance_templates = [
-    "{sub} is a type of {obj}",
-    "Every {sub} is an instance of {obj}",
-    "{sub} falls under the category of {obj}",
-    "{sub} can be seen as a specialization of {obj}",
-    "{obj} generalizes the concept of {sub}",
-    "{obj} includes all instances of {sub}",
-    "If something is a {sub}, then it is a {obj}",
-    "{sub} belongs to the broader class of {obj}",
-    "{sub} is more specific than {obj}",
-    "{sub} is a manifestation of {obj}",
-    "{obj} is a superclass of {sub}",
-    "{sub} derives from the category {obj}",
-    "{sub} is subsumed by {obj}",
-    "{sub} should be classified under {obj}",
-    "{sub} expresses all attributes of {obj}",
-    "In the context of {obj}, {sub} is a specific case",
-    "{sub} is an instantiated form of {obj}",
-    "{sub} is a narrower subtype of {obj}",
-    "What we call {sub} is just a kind of {obj}",
-    "Part of what makes up {obj} is represented by {sub}"
-]
-
-_inheritance_templates_q = [
-    "Is {sub} a type of {obj}",
-    "Is every {sub} an instance of {obj}",
-    "Does {sub} fall under the category of {obj}",
-    "Can {sub} be seen as a specialization of {obj}",
-    "Does {obj} generalize the concept of {sub}",
-    "Does {obj} include all instances of {sub}",
-    "If something is a {sub}, then is it a {obj}",
-    "Does {sub} belong to the broader class of {obj}",
-    "Is {sub} more specific than {obj}",
-    "Is {sub} a manifestation of {obj}",
-    "Is {obj} a superclass of {sub}",
-    "Does {sub} derive from the category {obj}",
-    "Is {sub} subsumed by {obj}",
-    "Should {sub} be classified under {obj}",
-    "Does {sub} express all attributes of {obj}",
-    "In the context of {obj}, is {sub} a specific case",
-    "Is {sub} an instantiated form of {obj}",
-    "Is {sub} a narrower subtype of {obj}",
-    "Is what we call {sub} just a kind of {obj}",
-    "Is part of what makes up {obj} represented by {sub}"
-]
-
-_similarity_templates = [
-    "{sub} and {obj} are conceptually identical",
-    "{sub} is the same as {obj}",
-    "{sub} and {obj} refer to the same thing",
-    "{sub} equals {obj}",
-    "{sub} and {obj} are interchangeable terms",
-    "{sub} and {obj} describe the same category",
-    "Whether you say {sub} or {obj}, it means the same",
-    "{sub} is also known as {obj}",
-    "{obj} is an alternative name for {sub}",
-    "{sub} and {obj} are equivalent concepts",
-    "{sub} and {obj} have no distinction in meaning",
-    "People consider {sub} and {obj} to be the same",
-    "{sub} and {obj} can substitute for each other",
-    "{sub} and {obj} are synonyms",
-    "To us, {sub} and {obj} have the same definition",
-    "Both {sub} and {obj} signify the same thing",
-    "{sub} is recognized as equivalent to {obj}",
-    "{sub} and {obj} mutually define one another",
-    "{sub} is a valid replacement for {obj}",
-    "{sub} and {obj} share a bidirectional ontological relation"
-]
-
-_similarity_templates_q = [
-    "Are {sub} and {obj} conceptually identical",
-    "Is {sub} the same as {obj}",
-    "Do {sub} and {obj} refer to the same thing",
-    "Does {sub} equal {obj}",
-    "Are {sub} and {obj} interchangeable terms",
-    "Do {sub} and {obj} describe the same category",
-    "Whether you say {sub} or {obj}, does it mean the same",
-    "Is {sub} also known as {obj}",
-    "Is {obj} an alternative name for {sub}",
-    "Are {sub} and {obj} equivalent concepts",
-    "Do {sub} and {obj} have no distinction in meaning",
-    "Do people consider {sub} and {obj} to be the same",
-    "Can {sub} and {obj} substitute for each other",
-    "Are {sub} and {obj} synonyms",
-    "To us, do {sub} and {obj} have the same definition",
-    "Do Both {sub} and {obj} signify the same thing",
-    "Is {sub} recognized as equivalent to {obj}",
-    "Do {sub} and {obj} mutually define one another",
-    "Is {sub} a valid replacement for {obj}",
-    "Do {sub} and {obj} share a bidirectional ontological relation"
-]
-
-
 def get_truth_label(freq, truth_categories):
     for lower, upper, labels in truth_categories:
         if lower <= freq < upper:
@@ -336,11 +239,11 @@ def render_input(task: Task, inheritance_templates, similarity_templates, truth_
     if task.copula == "-->":
         template = random.choice(inheritance_templates)
         base_sentence = template.format(sub=task.sub, obj=task.obj)
-        return f"{base_sentence}. This statement {truth_label}, based on evidence from judgments {{{evidence_str}}}."
+        return f"{base_sentence}. This statement {truth_label}, based on evidence from evidence {{{evidence_str}}}."
     elif task.copula == "<->":
         template = random.choice(similarity_templates)
         base_sentence = template.format(sub=task.sub, obj=task.obj)
-        return f"{base_sentence}. This statement {truth_label}, based on evidence from judgments {{{evidence_str}}}."
+        return f"{base_sentence}. This statement {truth_label}, based on evidence from evidence {{{evidence_str}}}."
 
 
 def render_question(task: Task, inheritance_templates_q, similarity_templates_q):
@@ -361,141 +264,137 @@ def parse_output(task_1: Task, task_2: Task, results: [Task, ...]):
     return ret
 
 
-class RuleGrid:
+def instantiate_and_reasoning(S, M, P, case, J1=None, J2=None):
+    Rs = []
 
-    def __init__(self):
-        self.x_axis = ["MP", "PM", "M<>P"]
-        self.y_axis = ["SM", "MS", "S<>M"]
+    while True:
+        eb1 = {random.randint(0, 10000) for _ in range(random.randint(1, 2))} if not J1 else J1.eb
+        eb2 = {random.randint(0, 10000) for _ in range(random.randint(1, 2))} if not J2 else J2.eb
+        if eb1 != eb2:
+            break
 
-    def select_premise_0(self):
-        if random.random() < 0.5:
-            return random.sample(self.x_axis, 1), random.sample(self.y_axis, 2)
-        else:
-            return random.sample(self.x_axis, 2), random.sample(self.y_axis, 1)
+    if case == "MP, SM":
+        J1 = J1 or Task(M, P, "-->", Truth(random.random(), 0.9), eb1)
+        J2 = J2 or Task(S, M, "-->", Truth(random.random(), 0.9), eb2)
+        Rs = reasoning(J1, J2)
+    elif case == "PM, SM":
+        J1 = J1 or Task(P, M, "-->", Truth(random.random(), 0.9), eb1)
+        J2 = J2 or Task(S, M, "-->", Truth(random.random(), 0.9), eb2)
+        Rs = reasoning(J1, J2)
+    elif case == "M<>P, SM":
+        J1 = J1 or Task(M, P, "<->", Truth(random.random(), 0.9), eb1)
+        J2 = J2 or Task(S, M, "-->", Truth(random.random(), 0.9), eb2)
+        Rs = reasoning(J1, J2)
+    elif case == "MP, MS":
+        J1 = J1 or Task(M, P, "-->", Truth(random.random(), 0.9), eb1)
+        J2 = J2 or Task(M, S, "-->", Truth(random.random(), 0.9), eb2)
+        Rs = reasoning(J1, J2)
+    elif case == "PM, MS":
+        J1 = J1 or Task(P, M, "-->", Truth(random.random(), 0.9), eb1)
+        J2 = J2 or Task(M, S, "-->", Truth(random.random(), 0.9), eb2)
+        Rs = reasoning(J1, J2)
+    elif case == "M<>P, MS":
+        J1 = J1 or Task(M, P, "<->", Truth(random.random(), 0.9), eb1)
+        J2 = J2 or Task(M, S, "-->", Truth(random.random(), 0.9), eb2)
+        Rs = reasoning(J1, J2)
+    elif case == "MP, S<>M":
+        J1 = J1 or Task(M, P, "-->", Truth(random.random(), 0.9), eb1)
+        J2 = J2 or Task(S, M, "<->", Truth(random.random(), 0.9), eb2)
+        Rs = reasoning(J1, J2)
+    elif case == "PM, S<>M":
+        J1 = J1 or Task(P, M, "-->", Truth(random.random(), 0.9), eb1)
+        J2 = J2 or Task(S, M, "<->", Truth(random.random(), 0.9), eb2)
+        Rs = reasoning(J1, J2)
+    elif case == "M<>P, S<>M":
+        J1 = J1 or Task(M, P, "<->", Truth(random.random(), 0.9), eb1)
+        J2 = J2 or Task(S, M, "<->", Truth(random.random(), 0.9), eb2)
+        Rs = reasoning(J1, J2)
 
-    @staticmethod
-    def select_premise_1(premise_As, premise_Bs):
-        return random.choice(premise_As), random.choice(premise_Bs)
+    return J1, J2, Rs
 
 
-def gen_random_reasoning(n=1,
-                         inheritance_templates=None, inheritance_templates_q=None,
-                         similarity_templates=None, similarity_templates_q=None,
-                         truth_categories=None,
-                         model_index=0, num_models=1, uniform_sampling=False):
-    cases = ["MP, SM", "PM, SM", "M<>P, SM", "MP, MS", "PM, MS", "M<>P, MS", "MP, S<>M", "PM, S<>M", "M<>P, S<>M"]
+def gen_random_reasoning(cases,
+                         n,
+                         inheritance_templates, inheritance_templates_q,
+                         similarity_templates, similarity_templates_q,
+                         truth_categories,
+                         model_index=0, num_models=1, for_testing=False):
+    # different models (marked by indices) are trained using different rules to simulate the bias
+    # though tested with all rules, when for_testing is true
 
-    if truth_categories is None:
-        truth_categories = _truth_categories
-    if inheritance_templates is None:
-        inheritance_templates = _inheritance_templates
-        inheritance_templates_q = _inheritance_templates_q
-    if similarity_templates is None:
-        similarity_templates = _similarity_templates
-        similarity_templates_q = _similarity_templates_q
-
-    if not uniform_sampling:
-        accessible_cases = []
-        CASES = copy.deepcopy(cases)
-        random.shuffle(CASES)
-        for _ in range(num_models - 1):
-            tmp = []
-            for _ in range(len(CASES) // num_models):
-                tmp.append(CASES.pop())
-            accessible_cases.append(tmp)
-        accessible_cases += [CASES]
-        accessible_case = accessible_cases[model_index]
+    if not for_testing:
+        # split all cases with no overlapping
+        shuffled = list(cases)
+        random.shuffle(shuffled)
+        accessible_case = np.array_split(shuffled, num_models)[model_index].tolist()
     else:
         accessible_case = cases
 
-    rg = RuleGrid()
     ret = []
-
     for _ in range(n):
 
+        # find a case for step-1 reasoning
+        case_1 = random.choice(accessible_case)
+        S_1, M_1, P_1 = [f"ID_{each}" for each in random.sample(range(0, 100000), 3)]
+        J1_1, J2_1, Rs_1 = instantiate_and_reasoning(S_1, M_1, P_1, case_1)
+        Rs_1 = random.choice(Rs_1)
+
+        # fine J1 distracting premises
+        dt_case_1 = random.choice(accessible_case)  # dt for distracting
         while True:
-            S = f"ID_{random.randint(0, 100000)}"
-            M = f"ID_{random.randint(0, 100000)}"
-            P = f"ID_{random.randint(0, 100000)}"
-            if len({S, M, P}) == 3:
+            # avoiding as the same as the non-distracting one (though very unlikely)
+            dt_S_1, dt_M_1, dt_P_1 = [f"ID_{each}" for each in random.sample(range(0, 100000), 3)]
+            if dt_S_1 != S_1 or dt_M_1 != M_1 or dt_P_1 != P_1:
+                break
+        dt_J1_1, dt_J2_1, _ = instantiate_and_reasoning(dt_S_1, dt_M_1, dt_P_1, dt_case_1)
+
+        # >--
+        # go for step-2 reasoning
+
+        # get SMP/case for step-2
+        while True:
+            S_2, M_2, P_2 = [f"ID_{each}" for each in random.sample(range(0, 100000), 3)]
+            if len({S_1, M_1, P_1, S_2, M_2, P_2}) == 6:
+                break
+        d = {"S": S_2, "M": M_2, "P": P_2}
+        random.shuffle(accessible_case)
+        mk = -1
+        for each_case in accessible_case:
+            if mk != -1:
+                break
+            for i, each in enumerate(each_case.split(", ")):
+                if ("<>" in each and Rs_1.copula != "<->") or ("<>" not in each and Rs_1.copula != "-->"):
+                    continue
+                each = each.replace("<>", "")
+                d[each[0]], d[each[1]] = Rs_1.sub, Rs_1.obj
+                mk = i
+                case_2 = each_case
                 break
 
-        while True:
-            premise_As, premise_Bs = rg.select_premise_0()
-            premise_A, premise_B = rg.select_premise_1(premise_As, premise_Bs)
-            case = f"{premise_A}, {premise_B}"
-            if case in accessible_case:
-                break
+        if mk == -1:
+            continue
+        elif mk == 0:
+            J1_2 = Rs_1
+            _, J2_2, Rs_2 = instantiate_and_reasoning(d["S"], d["M"], d["P"], case_2, J1=Rs_1)
+        elif mk == 1:
+            J2_2 = Rs_1
+            J1_2, _, Rs_2 = instantiate_and_reasoning(d["S"], d["M"], d["P"], case_2, J2=Rs_1)
 
-        if case == cases[0]:
-            # MP, SM
-            J1 = Task(M, P, "-->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            J2 = Task(S, M, "-->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            Rs = random.sample(reasoning(J1, J2), 1)
-        elif case == cases[1]:
-            # PM, SM
-            J1 = Task(P, M, "-->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            J2 = Task(S, M, "-->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            Rs = random.sample(reasoning(J1, J2), 1)
-        elif case == cases[2]:
-            # M<>P, SM
-            J1 = Task(M, P, "<->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            J2 = Task(S, M, "-->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            Rs = random.sample(reasoning(J1, J2), 1)
-        elif case == cases[3]:
-            # MP, MS
-            J1 = Task(M, P, "-->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            J2 = Task(M, S, "-->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            Rs = random.sample(reasoning(J1, J2), 1)
-        elif case == cases[4]:
-            # PM, MS
-            J1 = Task(P, M, "-->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            J2 = Task(M, S, "-->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            Rs = random.sample(reasoning(J1, J2), 1)
-        elif case == cases[5]:
-            # M<>P, MS
-            J1 = Task(M, P, "<->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            J2 = Task(M, S, "-->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            Rs = random.sample(reasoning(J1, J2), 1)
-        elif case == cases[6]:
-            # MP, S<>M
-            J1 = Task(M, P, "-->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            J2 = Task(S, M, "<->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            Rs = random.sample(reasoning(J1, J2), 1)
-        elif case == cases[7]:
-            # PM, S<>M
-            J1 = Task(P, M, "-->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            J2 = Task(S, M, "<->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            Rs = random.sample(reasoning(J1, J2), 1)
-        elif case == cases[8]:
-            # M<>P, S<>M
-            J1 = Task(M, P, "<->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            J2 = Task(S, M, "<->", Truth(random.random(), 0.9),
-                      {random.randint(0, 10000) for _ in range(random.randint(1, 2))})
-            Rs = random.sample(reasoning(J1, J2), 1)
+        Rs_2 = random.choice(Rs_2)
 
-        ret.append([[render_input(J1, inheritance_templates, similarity_templates, truth_categories),
-                     render_input(J2, inheritance_templates, similarity_templates, truth_categories),
-                     render_question(Rs[0], inheritance_templates_q, similarity_templates_q),
-                     parse_output(J1, J2, Rs)],
-                    [J1, J2, Rs]])
+        premises_texts = [render_input(J1_1, inheritance_templates, similarity_templates, truth_categories),
+                          render_input(J2_1, inheritance_templates, similarity_templates, truth_categories),
+                          render_input(dt_J1_1, inheritance_templates, similarity_templates, truth_categories),
+                          render_input(dt_J2_1, inheritance_templates, similarity_templates, truth_categories)]
+        if mk == 0:
+            premises_texts.append(render_input(J2_2, inheritance_templates, similarity_templates, truth_categories))
+        if mk == 1:
+            premises_texts.append(render_input(J1_2, inheritance_templates, similarity_templates, truth_categories))
+
+        question = render_question(Rs_2, inheritance_templates_q, similarity_templates_q)
+        results_jsons = [parse_output(J1_1, J2_1, [Rs_1]),
+                         parse_output(J1_2, J2_2, [Rs_2])]
+        ret.append([premises_texts, question, results_jsons])
 
     return ret
 
@@ -506,12 +405,14 @@ class Generator:
         random.seed(random_seed)
 
     @staticmethod
-    def gen_random_reasoning(n=1,
+    def gen_random_reasoning(cases,
+                             n=1,
                              inheritance_templates=None, inheritance_templates_q=None,
                              similarity_templates=None, similarity_templates_q=None,
                              truth_categories=None,
                              model_index=0, num_models=1, uniform_sampling=False):
-        return gen_random_reasoning(n,
+        return gen_random_reasoning(cases,
+                                    n,
                                     inheritance_templates, inheritance_templates_q,
                                     similarity_templates, similarity_templates_q,
                                     truth_categories,
@@ -520,6 +421,10 @@ class Generator:
 
 if __name__ == "__main__":
     G = Generator(39)
-    samples = G.gen_random_reasoning(num_models=3, model_index=0)
-    # samples = G.gen_random_reasoning(uniform_sampling=True)
+    samples = G.gen_random_reasoning(cs,
+                                     1,
+                                     _inheritance_templates, _inheritance_templates_q,
+                                     _similarity_templates, _similarity_templates_q,
+                                     _truth_categories,
+                                     model_index=0, num_models=1, uniform_sampling=False)
     print(samples)

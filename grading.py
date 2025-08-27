@@ -1,9 +1,13 @@
+import csv
+import os
+
 import json
 
 import numpy as np
+from matplotlib import pyplot as plt
 from scipy.optimize import linear_sum_assignment
 
-from .formal_reasoning import Task, Truth, reasoning
+from formal_reasoning import Task, Truth, reasoning
 
 
 def parsing_json(json_output):
@@ -46,21 +50,62 @@ def parsing_json(json_output):
         return None, None, []
 
 
-def similarity_score(a, b):
-    diff = abs(a - b)
+def fc_similarity_score(fc1, fc2):
+    diff = abs(fc1 - fc2)
 
+    # if the diff is smaller than 0.05, assumed the same
     if diff <= 0.05:
         return 1.0
 
+    # project the value (from 0.05 to 0.2) to a range [0, 1]
     elif diff <= 0.2:
         norm_diff = (diff - 0.05) / 0.15
-        return 0.1 + 0.9 * (1 - norm_diff) ** 2
+        return 0.1 + 0.9 * (1 - norm_diff) ** 2  # apply polynomial effects
 
     else:
         return 0.1
 
 
-def grade_0(json_output):
+def grade_0(json_outputs):
+    # grade 2 steps in reasoning
+    # grade each individual step
+    # then grade the connection between 2 steps
+
+    ret = grade_0_util(json_outputs["step 1"]) * grade_0_util(json_outputs["step 2"])
+
+    step_1_result = json_outputs["step 1"]["results"][0]
+    A, B = np.zeros((1, 2)), np.zeros((1, 2))
+    for i, each_step_2_premise in enumerate([json_outputs["step 2"]["premise_1"], json_outputs["step 2"]["premise_2"]]):
+        if "r" not in each_step_2_premise:
+            continue
+        tmp_A, tmp_B = 0, 0
+        for each_key in ["s", "o", "cp", "eb", "r"]:
+            if step_1_result[each_key] == each_step_2_premise[each_key]:
+                tmp_A += 5
+            tmp_B += 5
+
+        # grade on the truth-value
+        tmp_A += fc_similarity_score(step_1_result["f"], each_step_2_premise["f"]) * 25
+        tmp_A += fc_similarity_score(step_1_result["c"], each_step_2_premise["c"]) * 25
+        tmp_B += 50
+        A[0, i] = tmp_A
+        B[0, i] = tmp_B
+
+    a, b = 0, 0
+    scores = A / (B + 1e-5)
+    row_idx, col_idx = linear_sum_assignment(-scores)
+    for row_i, col_i in zip(row_idx, col_idx):
+        a += A[row_i, col_i]
+        b += B[row_i, col_i]
+
+    ret *= float(max(0.1, a / (b + 1e-5)))
+
+    return ret
+
+
+def grade_0_util(json_output):
+    # grade individual single step reasoning
+
     premise_1, premise_2, results = parsing_json(json_output)
 
     if premise_1 is None or premise_2 is None or not results:
@@ -81,18 +126,18 @@ def grade_0(json_output):
     A, B = np.zeros((len(results), len(Rs))), np.zeros((len(results), len(Rs)))
 
     for i, each_llm_output in enumerate(results):
-        for j, each_label in enumerate(Rs):
+        for j, each_label_task in enumerate(Rs):
             tmp_A, tmp_B = 0, 0
             for each_key in ["s", "o", "cp", "eb", "r"]:
                 if each_llm_output is not None and each_key in each_llm_output and each_llm_output[each_key] == \
-                        each_label.to_json()[each_key]:
+                        each_label_task.to_json()[each_key]:
                     tmp_A += 5
                 tmp_B += 5
 
             # grade on the truth-value
             if "f" in each_llm_output and "c" in each_llm_output:
-                tmp_A += similarity_score(each_llm_output["f"], each_label.to_json()["f"]) * 25
-                tmp_A += similarity_score(each_llm_output["c"], each_label.to_json()["c"]) * 25
+                tmp_A += fc_similarity_score(each_llm_output["f"], each_label_task.to_json()["f"]) * 25
+                tmp_A += fc_similarity_score(each_llm_output["c"], each_label_task.to_json()["c"]) * 25
             tmp_B += 50
             A[i, j] = tmp_A
             B[i, j] = tmp_B
@@ -107,29 +152,116 @@ def grade_0(json_output):
     return float(max(0.1, a / (b + 1e-5)))
 
 
-def grade_1(llm_json_output, label_json_output):
-    premise_1_llm, premise_2_llm, _ = parsing_json(llm_json_output)
-    premise_1_label, premise_2_label, _ = parsing_json(label_json_output)
+def grade_1(llm_json_output_step2, label_json_output_step2):
+    # grade whether the llm response solves the asked problem
+
+    llm_json_output_step2 = llm_json_output_step2["step 2"]
+    label_json_output_step2 = label_json_output_step2["step 2"]
+
+    _, _, results_llm = parsing_json(llm_json_output_step2)
+
+    if not results_llm:
+        return 0.1
+
+    _, _, results_label = parsing_json(label_json_output_step2)
+
+    A, B = np.zeros((len(results_llm), len(results_label))), np.zeros((len(results_llm), len(results_label)))
+    for i, each_llm_output in enumerate(results_llm):
+        for j, each_label in enumerate(results_label):
+            tmp_A, tmp_B = 0, 0
+            for each_key in ["s", "o", "cp", "eb", "r"]:
+                if (each_llm_output is not None and each_key in each_llm_output and each_llm_output[each_key]
+                        == each_label[each_key]):
+                    tmp_A += 5
+                tmp_B += 5
+
+            # grade on the truth-value
+            if "f" in each_llm_output and "c" in each_llm_output:
+                tmp_A += fc_similarity_score(each_llm_output["f"], each_label["f"]) * 25
+                tmp_A += fc_similarity_score(each_llm_output["c"], each_label["c"]) * 25
+            tmp_B += 50
+            A[i, j] = tmp_A
+            B[i, j] = tmp_B
 
     a, b = 0, 0
-
-    for i, premises in enumerate([[premise_1_label, premise_1_llm], [premise_2_label, premise_2_llm]]):
-        for each_key in ["s", "o", "cp", "eb"]:
-            if premises[1] is not None and each_key in premises[1] and premises[0][each_key] == premises[1][each_key]:
-                a += 5
-            b += 5
-
-        for each_key in ["f", "c"]:
-            if premises[1] is not None and each_key in premises[1] and abs(
-                    premises[0][each_key] - premises[1][each_key]) <= 0.2:
-                a += 5
-            b += 5
+    scores = A / B
+    row_idx, col_idx = linear_sum_assignment(-scores)
+    for row_i, col_i in zip(row_idx, col_idx):
+        a += A[row_i, col_i]
+        b += B[row_i, col_i]
 
     return float(max(0.1, a / (b + 1e-5)))
 
 
 if __name__ == "__main__":
-    from_LLM = '{"premise_1": {"s": "ID_33382", "o": "ID_88697", "cp": "-->", "f": 0.009, "c": 0.9, "eb": [5698, 6916]}, "premise_2": {"s": "ID_33382", "o": "ID_84647", "cp": "-->", "f": 0.79, "c": 0.9, "eb": [6416]}, "results": [{"s": "ID_84647", "o": "ID_88697", "cp": "<->", "f": 0.090, "c": 0.931, "eb": [6416, 6916], "r": "com"}]}'
-    label = '{"premise_1": {"s": "ID_33382", "o": "ID_88697", "cp": "-->", "f": 0.009, "c": 0.9, "eb": [5698, 6916]}, "premise_2": {"s": "ID_33382", "o": "ID_84647", "cp": "-->", "f": 0.79, "c": 0.9, "eb": [6416]}, "results": [{"s": "ID_84647", "o": "ID_88697", "cp": "<->", "f": 0.009, "c": 0.391, "eb": [5698, 6416, 6916], "r": "com"}]}'
-    print(grade_0(json.loads(from_LLM)))
-    print(grade_1(json.loads(from_LLM), json.loads(label)))
+
+    record = []
+    for col, each_record in enumerate(os.listdir("./test_record/")):
+        with open("./test_record/" + each_record) as f:
+            reader = csv.reader(f, quoting=csv.QUOTE_MINIMAL)
+            for row, each_line in enumerate(reader):
+                if row == 0:  # skip the title
+                    continue
+                if col == 0:  # create an additional colum
+                    record.append([json.loads(each_line[0].split("Assistant: ")[-1].split("<|endoftext|>")[0].strip())])
+                each_line[1] = each_line[1].replace("Human:", "")
+                try:
+                    record[row - 1].append(json.loads(each_line[1].split("Assistant: ")[-1].strip()))
+                except:
+                    record[row - 1].append("err")
+
+    for i in range(len(record)):
+        rebuilt_responses = []
+        tmp_1 = []
+        tmp_2 = []
+        for j in range(len(record[i])):
+            if j == 0:
+                continue
+            if record[i][j] == "err":
+                tmp_1.append("err")
+                tmp_2.append("err")
+            else:
+                tmp_1.append(record[i][j]["step 1"])
+                tmp_2.append(record[i][j]["step 2"])
+        for each_1 in tmp_1:
+            for each_2 in tmp_2:
+                if each_1 == "err" or each_2 == "err":
+                    rebuilt_responses.append("err")
+                else:
+                    rebuilt_responses.append({"step 1": each_1, "step 2": each_2})
+        record[i].extend(rebuilt_responses)
+
+    scores = []
+    for i in range(len(record)):
+        tmp = []
+        for j in range(len(record[i])):
+
+            if j == 0:
+                continue
+            try:
+                tmp.append(grade_0(record[i][j]) * grade_1(record[i][j], record[i][0]))
+            except:
+                tmp.append(-1)
+        scores.append(tmp)
+
+    scores = np.array(scores)
+
+    c_0, c_1, c_2, c_h3, c_h = [], [], [], [], []
+
+    for threshold in np.linspace(0.1, 0.9, 10):
+        c_0.append(sum(scores[:, 0] > threshold) / scores.shape[0])
+        c_1.append(sum(scores[:, 1] > threshold) / scores.shape[0])
+        c_2.append(sum(scores[:, 2] > threshold) / scores.shape[0])
+        c_h3.append(sum(np.max(scores[:, :3], axis=1) > threshold) / scores.shape[0])
+        c_h.append(sum(np.max(scores, axis=1) > threshold) / scores.shape[0])
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(c_0, label="c0")
+    plt.plot(c_1, label="c1")
+    plt.plot(c_2, label="c2")
+    plt.plot(c_h3, label="ch3")
+    plt.plot(c_h, label="ch")
+
+    plt.grid()
+    plt.legend()
+    plt.show()
