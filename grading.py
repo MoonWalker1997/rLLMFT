@@ -264,6 +264,5 @@ if __name__ == "__main__":
 
     plt.grid()
     plt.legend()
-    plt.show()
-
     plt.savefig("curve.png")
+    plt.show()
