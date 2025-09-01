@@ -23,7 +23,7 @@ if __name__ == "__main__":
     )
 
     for col, each_record in enumerate(os.listdir("./test_record/")):
-        if "csv" not in each_record:
+        if "csv" not in each_record or "repaired" in each_record:
             continue
         tmp = []
         with open("./test_record/" + each_record) as f:
