@@ -68,56 +68,56 @@ We also prepare **20** question-style templates:
 * Is what we call \{sub\} just a kind of \{obj\}?
 * Is part of what makes up \{obj\} represented by \{sub\}?
 
-\subsubsection{Similarity Templates}
+### Similarity Templates
 
-Analogously, 20 templates for similarity:
+Analogously, **20** templates for similarity:
 
-\begin{itemize}
-    \item \{sub\} and \{obj\} are conceptually identical
-    \item \{sub\} is the same as \{obj\}
-    \item \{sub\} and \{obj\} refer to the same thing
-    \item \{sub\} equals \{obj\}
-    \item \{sub\} and \{obj\} are interchangeable terms
-    \item \{sub\} and \{obj\} describe the same category
-    \item Whether you say \{sub\} or \{obj\}, it means the same
-    \item \{sub\} is also known as \{obj\}
-    \item \{obj\} is an alternative name for \{sub\}
-    \item \{sub\} and \{obj\} are equivalent concepts
-    \item \{sub\} and \{obj\} have no distinction in meaning
-    \item People consider \{sub\} and \{obj\} to be the same
-    \item \{sub\} and \{obj\} can substitute for each other
-    \item \{sub\} and \{obj\} are synonyms
-    \item To us, \{sub\} and \{obj\} have the same definition
-    \item Both \{sub\} and \{obj\} signify the same thing
-    \item \{sub\} is recognized as equivalent to \{obj\}
-    \item \{sub\} and \{obj\} mutually define one another
-    \item \{sub\} is a valid replacement for \{obj\}
-    \item \{sub\} and \{obj\} share a bidirectional ontological relation
-\end{itemize}
+* \{sub\} and \{obj\} are conceptually identical
+* \{sub\} is the same as \{obj\}
+* \{sub\} and \{obj\} refer to the same thing
+* \{sub\} equals \{obj\}
+* \{sub\} and \{obj\} are interchangeable terms
+* \{sub\} and \{obj\} describe the same category
+* Whether you say \{sub\} or \{obj\}, it means the same
+* \{sub\} is also known as \{obj\}
+* \{obj\} is an alternative name for \{sub\}
+* \{sub\} and \{obj\} are equivalent concepts
+* \{sub\} and \{obj\} have no distinction in meaning
+* People consider \{sub\} and \{obj\} to be the same
+* \{sub\} and \{obj\} can substitute for each other
+* \{sub\} and \{obj\} are synonyms
+* To us, \{sub\} and \{obj\} have the same definition
+* Both \{sub\} and \{obj\} signify the same thing
+* \{sub\} is recognized as equivalent to \{obj\}
+* \{sub\} and \{obj\} mutually define one another
+* \{sub\} is a valid replacement for \{obj\}
+* \{sub\} and \{obj\} share a bidirectional ontological relation
 
-\subsubsection{Similarity Question Templates}
+### Similarity Question Templates
 
 Finally, the question-style similarity templates:
 
-\begin{itemize}
-    \item Are \{sub\} and \{obj\} conceptually identical?
-    \item Is \{sub\} the same as \{obj\}?
-    \item Do \{sub\} and \{obj\} refer to the same thing?
-    \item Does \{sub\} equal \{obj\}?
-    \item Are \{sub\} and \{obj\} interchangeable terms?
-    \item Do \{sub\} and \{obj\} describe the same category?
-    \item Whether you say \{sub\} or \{obj\}, does it mean the same?
-    \item Is \{sub\} also known as \{obj\}?
-    \item Is \{obj\} an alternative name for \{sub\}?
-    \item Are \{sub\} and \{obj\} equivalent concepts?
-    \item Do \{sub\} and \{obj\} have no distinction in meaning?
-    \item Do people consider \{sub\} and \{obj\} to be the same?
-    \item Can \{sub\} and \{obj\} substitute for each other?
-    \item Are \{sub\} and \{obj\} synonyms?
-    \item To us, do \{sub\} and \{obj\} have the same definition?
-    \item Do both \{sub\} and \{obj\} signify the same thing?
-    \item Is \{sub\} recognized as equivalent to \{obj\}?
-    \item Do \{sub\} and \{obj\} mutually define one another?
-    \item Is \{sub\} a valid replacement for \{obj\}?
-    \item Do \{sub\} and \{obj\} share a bidirectional ontological relation?
-\end{itemize}
+* Are \{sub\} and \{obj\} conceptually identical?
+* Is \{sub\} the same as \{obj\}?
+* Do \{sub\} and \{obj\} refer to the same thing?
+* Does \{sub\} equal \{obj\}?
+* Are \{sub\} and \{obj\} interchangeable terms?
+* Do \{sub\} and \{obj\} describe the same category?
+* Whether you say \{sub\} or \{obj\}, does it mean the same?
+* Is \{sub\} also known as \{obj\}?
+* Is \{obj\} an alternative name for \{sub\}?
+* Are \{sub\} and \{obj\} equivalent concepts?
+* Do \{sub\} and \{obj\} have no distinction in meaning?
+* Do people consider \{sub\} and \{obj\} to be the same?
+* Can \{sub\} and \{obj\} substitute for each other?
+* Are \{sub\} and \{obj\} synonyms?
+* To us, do \{sub\} and \{obj\} have the same definition?
+* Do both \{sub\} and \{obj\} signify the same thing?
+* Is \{sub\} recognized as equivalent to \{obj\}?
+* Do \{sub\} and \{obj\} mutually define one another?
+* Is \{sub\} a valid replacement for \{obj\}?
+* Do \{sub\} and \{obj\} share a bidirectional ontological relation?
+
+## JSON Structure Overview
+
+https://www.overleaf.com/project/6879086a92c628bf62dfd153/blob/4da43a2fa1592b64dce9282541fa55fe094371f9<img width="868" height="982" alt="image" src="https://github.com/user-attachments/assets/253e591a-3c78-44d9-b4d3-7dba185fc565" />
