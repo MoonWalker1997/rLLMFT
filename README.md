@@ -120,4 +120,4 @@ Finally, the question-style similarity templates:
 
 ## JSON Structure Overview
 
-https://www.overleaf.com/project/6879086a92c628bf62dfd153/blob/4da43a2fa1592b64dce9282541fa55fe094371f9<img width="868" height="982" alt="image" src="https://github.com/user-attachments/assets/253e591a-3c78-44d9-b4d3-7dba185fc565" />
+<img src="JSON structure.png" alt="JSON Structure" width="50%">
